@@ -302,6 +302,20 @@
       activeTab: 'discover'
     };
 
+    // Active Podcast Feed Pagination, Sort & Archive State
+    let currentFeedState = {
+      collectionId: 0,
+      feedUrl: '',
+      podTitle: '',
+      art: '',
+      episodes: [],
+      visibleCount: 30,
+      sortBy: 'newest',
+      filterQuery: '',
+      fullRssLoaded: false,
+      loadingRss: false
+    };
+
     const audio = document.getElementById('audio-player');
     let sleepInterval = null;
     let sleepSecondsRemaining = 0;
@@ -351,7 +365,6 @@
         }
       });
 
-      // Hide bottom mini-player when on the full Now Playing screen
       const footer = document.getElementById('footer-player');
       if (tab === 'nowplaying') {
         footer.classList.add('hidden');
@@ -381,7 +394,7 @@
       area.innerHTML = `<div class="text-xs text-zinc-400 py-6 text-center animate-pulse">Searching podcasts for "${escapeHtml(q)}"...</div>`;
 
       try {
-        const res = await fetch(`https://itunes.apple.com/search?media=podcast&term=${encodeURIComponent(q)}&limit=12`);
+        const res = await fetch(`https://itunes.apple.com/search?media=podcast&term=${encodeURIComponent(q)}&limit=15`);
         const data = await res.json();
         if (!data.results || data.results.length === 0) {
           area.innerHTML = `<p class="text-xs text-zinc-500 py-4 text-center">No podcasts found for "${escapeHtml(q)}".</p>`;
@@ -430,7 +443,7 @@
     }
 
     function toggleSub(id, title, artist, feedUrl, art) {
-      const idx = state.subscriptions.findIndex(s => Number(s.id) === Number(id));
+      const idx = state.subscriptions.findIndex(s => Number(s.id) === Number(id) || (feedUrl && s.feedUrl === feedUrl));
       if (idx > -1) {
         state.subscriptions.splice(idx, 1);
         showToast(`Unsubscribed from ${title}`, 'bg-zinc-400');
@@ -440,7 +453,11 @@
       }
       saveState();
       const q = document.getElementById('search-input').value.trim();
-      if (q) searchPodcasts();
+      if (q) {
+        searchPodcasts();
+      } else if (currentFeedState.podTitle === title) {
+        renderActiveFeedView();
+      }
     }
 
     function renderSubscriptions() {
@@ -460,48 +477,129 @@
       `).join('');
     }
 
+    // Parse duration tags like "01:42:15", "45:10", or "2710" into seconds
+    function parseDurationToSeconds(raw) {
+      if (!raw) return 0;
+      const str = String(raw).trim();
+      if (/^\d+$/.test(str)) return parseInt(str, 10);
+      const parts = str.split(':').map(Number);
+      if (parts.some(isNaN)) return 0;
+      if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+      if (parts.length === 2) return parts[0] * 60 + parts[1];
+      return 0;
+    }
+
+    // Parse full RSS XML into structured episode objects
+    function parseRssXmlItems(xmlText, fallbackArt) {
+      try {
+        const xml = new DOMParser().parseFromString(xmlText, "text/xml");
+        const items = Array.from(xml.querySelectorAll("item"));
+        return items.map(item => {
+          const epTitle = item.querySelector("title")?.textContent?.trim() || "Untitled Episode";
+          const enclosure = item.querySelector("enclosure");
+          const rawUrl = enclosure ? (enclosure.getAttribute("url") || "") : "";
+          const audioUrl = String(rawUrl).trim().replace(/^http:\/\//i, 'https://');
+          const pubDateStr = item.querySelector("pubDate")?.textContent?.trim() || "";
+          const timestamp = pubDateStr ? (Date.parse(pubDateStr) || 0) : 0;
+          const pubDateFormatted = timestamp
+            ? new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+            : '';
+
+          let durNode = item.getElementsByTagName("itunes:duration")[0] || item.querySelector("duration");
+          const durRaw = durNode ? durNode.textContent.trim() : "";
+          const durationSec = parseDurationToSeconds(durRaw);
+
+          let epArt = fallbackArt;
+          const itunesImg = item.getElementsByTagName("itunes:image")[0];
+          if (itunesImg && itunesImg.getAttribute("href")) {
+            epArt = getHiResArt(itunesImg.getAttribute("href"));
+          }
+
+          return {
+            title: epTitle,
+            audioUrl,
+            pubDate: pubDateFormatted,
+            timestamp,
+            durationSec,
+            duration: durationSec > 0 ? formatTime(durationSec) : '',
+            art: epArt
+          };
+        }).filter(ep => ep.audioUrl);
+      } catch (e) {
+        return [];
+      }
+    }
+
+    // Merge newly fetched RSS episodes with existing list without duplicates
+    function mergeEpisodeLists(primaryList, secondaryList) {
+      const map = new Map();
+      const normalizeKey = (ep) => {
+        const cleanUrl = (ep.audioUrl || '').split('?')[0].toLowerCase();
+        return cleanUrl || (ep.title || '').toLowerCase().trim();
+      };
+      primaryList.forEach(ep => map.set(normalizeKey(ep), ep));
+      secondaryList.forEach(ep => {
+        const key = normalizeKey(ep);
+        if (!map.has(key)) {
+          map.set(key, ep);
+        } else {
+          const existing = map.get(key);
+          if (!existing.durationSec && ep.durationSec) {
+            existing.durationSec = ep.durationSec;
+            existing.duration = ep.duration;
+          }
+          if (!existing.timestamp && ep.timestamp) {
+            existing.timestamp = ep.timestamp;
+            existing.pubDate = ep.pubDate;
+          }
+        }
+      });
+      return Array.from(map.values());
+    }
+
+    // Fetch up to 200 episodes via iTunes Lookup API + deep RSS archive support
     async function loadFeed(collectionId, feedUrl, podTitle, art) {
       const hiResArt = getHiResArt(art);
       const area = document.getElementById('results-area');
       area.innerHTML = `<div class="text-xs text-zinc-400 py-8 text-center animate-pulse">Loading episodes for <span class="text-white font-medium">${escapeHtml(podTitle)}</span>...</div>`;
 
       let episodes = [];
+      let resolvedFeedUrl = feedUrl || '';
+      let resolvedId = Number(collectionId) || 0;
 
-      // 1. Official Apple iTunes Episode Lookup API
-      if (collectionId && Number(collectionId) > 0) {
+      // 1. Official Apple iTunes Episode Lookup API (Up to 200 episodes immediately)
+      if (resolvedId > 0) {
         try {
-          const res = await fetch(`https://itunes.apple.com/lookup?id=${collectionId}&media=podcast&entity=podcastEpisode&limit=30`);
+          const res = await fetch(`https://itunes.apple.com/lookup?id=${resolvedId}&media=podcast&entity=podcastEpisode&limit=200`);
           if (res.ok) {
             const data = await res.json();
+            const collectionInfo = (data.results || []).find(r => r.wrapperType === 'track' || r.kind === 'podcast');
+            if (collectionInfo && collectionInfo.feedUrl && !resolvedFeedUrl) {
+              resolvedFeedUrl = collectionInfo.feedUrl;
+            }
             const rawEpisodes = (data.results || []).filter(r => r.wrapperType === 'podcastEpisode' && r.episodeUrl);
-            episodes = rawEpisodes.map(ep => ({
-              title: ep.trackName || 'Untitled Episode',
-              audioUrl: String(ep.episodeUrl).replace(/^http:\/\//i, 'https://'),
-              pubDate: ep.releaseDate ? new Date(ep.releaseDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '',
-              duration: ep.trackTimeMillis ? formatTime(ep.trackTimeMillis / 1000) : '',
-              art: getHiResArt(ep.artworkUrl600 || ep.artworkUrl160 || hiResArt)
-            }));
+            episodes = rawEpisodes.map(ep => {
+              const ts = ep.releaseDate ? (Date.parse(ep.releaseDate) || 0) : 0;
+              const durSec = ep.trackTimeMillis ? Math.floor(ep.trackTimeMillis / 1000) : 0;
+              return {
+                title: ep.trackName || 'Untitled Episode',
+                audioUrl: String(ep.episodeUrl).replace(/^http:\/\//i, 'https://'),
+                pubDate: ts ? new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+                timestamp: ts,
+                durationSec: durSec,
+                duration: durSec > 0 ? formatTime(durSec) : '',
+                art: getHiResArt(ep.artworkUrl600 || ep.artworkUrl160 || hiResArt)
+              };
+            });
           }
         } catch (err) {}
       }
 
-      // 2. Fallback: RSS2JSON API
-      if (episodes.length === 0 && feedUrl) {
-        try {
-          const r1 = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`);
-          if (r1.ok) {
-            const d1 = await r1.json();
-            if (d1.status === 'ok' && d1.items) {
-              episodes = d1.items.map(item => ({
-                title: item.title || 'Untitled Episode',
-                audioUrl: String(item.enclosure?.link || item.link || '').replace(/^http:\/\//i, 'https://'),
-                pubDate: item.pubDate ? item.pubDate.split(' ')[0] : '',
-                duration: '',
-                art: hiResArt
-              })).filter(ep => ep.audioUrl);
-            }
-          }
-        } catch (err) {}
+      // 2. Fallback if iTunes Lookup returned 0 episodes: Fetch directly from RSS / CORS proxies
+      let rssLoadedDuringInit = false;
+      if (episodes.length === 0 && resolvedFeedUrl) {
+        episodes = await fetchDeepRssArchive(resolvedFeedUrl, hiResArt);
+        rssLoadedDuringInit = episodes.length > 0;
       }
 
       if (episodes.length === 0) {
@@ -511,6 +609,19 @@
           </div>`;
         return;
       }
+
+      currentFeedState = {
+        collectionId: resolvedId,
+        feedUrl: resolvedFeedUrl,
+        podTitle,
+        art: hiResArt,
+        episodes,
+        visibleCount: 30,
+        sortBy: 'newest',
+        filterQuery: '',
+        fullRssLoaded: rssLoadedDuringInit,
+        loadingRss: false
+      };
 
       if (!state.currentEpisode && episodes[0]) {
         state.currentEpisode = {
@@ -523,28 +634,202 @@
         loadCurrentIntoPlayer(0, false);
       }
 
-      const isSub = state.subscriptions.some(s => Number(s.id) === Number(collectionId) || s.feedUrl === feedUrl);
+      renderActiveFeedView();
+
+      // If iTunes hit its 200-episode cap and we have an RSS feedUrl, automatically supplement the full archive in the background
+      if (episodes.length >= 200 && resolvedFeedUrl && !rssLoadedDuringInit) {
+        unlockFullRssArchive(true);
+      }
+    }
+
+    async function fetchDeepRssArchive(feedUrl, fallbackArt) {
+      if (!feedUrl) return [];
+      // Try direct fetch first, then CORS-friendly raw XML proxies for large back-catalogs
+      const sources = [
+        feedUrl,
+        `https://corsproxy.io/?${encodeURIComponent(feedUrl)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`,
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(feedUrl)}`
+      ];
+      for (const src of sources) {
+        try {
+          const res = await fetch(src);
+          if (res.ok) {
+            const text = await res.text();
+            const parsed = parseRssXmlItems(text, fallbackArt);
+            if (parsed.length > 0) return parsed;
+          }
+        } catch (err) {}
+      }
+      // Last fallback: rss2json
+      try {
+        const r1 = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`);
+        if (r1.ok) {
+          const d1 = await r1.json();
+          if (d1.status === 'ok' && d1.items) {
+            return d1.items.map(item => {
+              const ts = item.pubDate ? (Date.parse(item.pubDate) || 0) : 0;
+              const durSec = parseDurationToSeconds(item.enclosure?.duration);
+              return {
+                title: item.title || 'Untitled Episode',
+                audioUrl: String(item.enclosure?.link || item.link || '').replace(/^http:\/\//i, 'https://'),
+                pubDate: ts ? new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+                timestamp: ts,
+                durationSec: durSec,
+                duration: durSec > 0 ? formatTime(durSec) : '',
+                art: fallbackArt
+              };
+            }).filter(ep => ep.audioUrl);
+          }
+        }
+      } catch (err) {}
+      return [];
+    }
+
+    async function unlockFullRssArchive(silent = false) {
+      if (!currentFeedState.feedUrl || currentFeedState.loadingRss || currentFeedState.fullRssLoaded) return;
+      currentFeedState.loadingRss = true;
+      if (!silent) renderActiveFeedView();
+
+      const rssEpisodes = await fetchDeepRssArchive(currentFeedState.feedUrl, currentFeedState.art);
+      currentFeedState.loadingRss = false;
+      currentFeedState.fullRssLoaded = true;
+
+      if (rssEpisodes.length > 0) {
+        const prevCount = currentFeedState.episodes.length;
+        currentFeedState.episodes = mergeEpisodeLists(currentFeedState.episodes, rssEpisodes);
+        const added = currentFeedState.episodes.length - prevCount;
+        if (added > 0 && !silent) {
+          showToast(`Loaded ${added} older archive episodes`);
+        }
+      }
+      renderActiveFeedView();
+    }
+
+    function getSortedAndFilteredEpisodes() {
+      const q = (currentFeedState.filterQuery || '').trim().toLowerCase();
+      let list = currentFeedState.episodes.slice();
+
+      if (q) {
+        list = list.filter(ep => (ep.title || '').toLowerCase().includes(q) || (ep.pubDate || '').toLowerCase().includes(q));
+      }
+
+      const sortMode = currentFeedState.sortBy || 'newest';
+      list.sort((a, b) => {
+        if (sortMode === 'newest') return (b.timestamp || 0) - (a.timestamp || 0);
+        if (sortMode === 'oldest') return (a.timestamp || 0) - (b.timestamp || 0);
+        if (sortMode === 'longest') return (b.durationSec || 0) - (a.durationSec || 0);
+        if (sortMode === 'shortest') {
+          const da = a.durationSec || Number.MAX_SAFE_INTEGER;
+          const db = b.durationSec || Number.MAX_SAFE_INTEGER;
+          return da - db;
+        }
+        if (sortMode === 'title') return (a.title || '').localeCompare(b.title || '');
+        return 0;
+      });
+
+      return list;
+    }
+
+    function changeFeedSort(newSort) {
+      currentFeedState.sortBy = newSort;
+      currentFeedState.visibleCount = 30;
+      renderEpisodesListOnly();
+    }
+
+    function handleEpisodeFilterInput(val) {
+      currentFeedState.filterQuery = val;
+      currentFeedState.visibleCount = 30;
+      renderEpisodesListOnly();
+    }
+
+    function loadMoreEpisodes() {
+      currentFeedState.visibleCount += 30;
+      renderEpisodesListOnly();
+      // If user is nearing the 200-episode boundary and full RSS isn't loaded yet, fetch it
+      if (currentFeedState.visibleCount >= currentFeedState.episodes.length - 30 && currentFeedState.feedUrl && !currentFeedState.fullRssLoaded) {
+        unlockFullRssArchive(false);
+      }
+    }
+
+    function renderActiveFeedView() {
+      const area = document.getElementById('results-area');
+      const { collectionId, feedUrl, podTitle, art } = currentFeedState;
+      const isSub = state.subscriptions.some(s => Number(s.id) === Number(collectionId) || (feedUrl && s.feedUrl === feedUrl));
 
       area.innerHTML = `
-        <div class="flex items-center justify-between p-3 border minimal-border rounded-xl bg-zinc-900/70 mb-3">
-          <div class="flex items-center gap-3 min-w-0">
-            <img src="${hiResArt}" onerror="this.src=FALLBACK_ART" class="w-12 h-12 rounded-xl object-cover border border-zinc-700 flex-shrink-0">
-            <div class="min-w-0">
-              <h3 class="text-sm font-semibold text-white truncate">${escapeHtml(podTitle)}</h3>
-              <p class="text-[11px] text-zinc-400">${episodes.length} episodes available</p>
+        <!-- Podcast Show Banner -->
+        <div class="p-3.5 border minimal-border rounded-2xl bg-zinc-900/70 space-y-3">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <img src="${art}" onerror="this.src=FALLBACK_ART" class="w-12 h-12 rounded-xl object-cover border border-zinc-700 flex-shrink-0">
+              <div class="min-w-0">
+                <h3 class="text-sm font-semibold text-white truncate">${escapeHtml(podTitle)}</h3>
+                <p id="feed-total-count" class="text-[11px] text-zinc-400">${currentFeedState.episodes.length} episodes in archive</p>
+              </div>
+            </div>
+            <button onclick="toggleSub(${collectionId || Date.now()}, '${escapeAttr(podTitle)}', '', '${escapeAttr(feedUrl)}', '${escapeAttr(art)}')" 
+              class="text-xs px-3 py-1.5 rounded-lg border font-medium transition flex-shrink-0 ${isSub ? 'border-zinc-700 text-zinc-400 hover:text-red-400' : 'border-white bg-white text-black hover:bg-zinc-200'}">
+              ${isSub ? 'Subscribed' : '+ Subscribe'}
+            </button>
+          </div>
+
+          <!-- Sort & In-Feed Episode Filter Controls -->
+          <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-zinc-800/80">
+            <div class="relative flex-1">
+              <input id="ep-filter-input" type="text" value="${escapeHtml(currentFeedState.filterQuery)}"
+                placeholder="Filter episodes by title or number..."
+                oninput="handleEpisodeFilterInput(this.value)"
+                class="w-full bg-zinc-950/90 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-600">
+            </div>
+            <div class="flex items-center gap-2">
+              <label for="ep-sort-select" class="text-[11px] text-zinc-400 whitespace-nowrap">Sort:</label>
+              <select id="ep-sort-select" onchange="changeFeedSort(this.value)"
+                class="bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-zinc-600 cursor-pointer flex-1 sm:flex-initial">
+                <option value="newest" ${currentFeedState.sortBy === 'newest' ? 'selected' : ''}>Newest First</option>
+                <option value="oldest" ${currentFeedState.sortBy === 'oldest' ? 'selected' : ''}>Oldest First</option>
+                <option value="longest" ${currentFeedState.sortBy === 'longest' ? 'selected' : ''}>Longest First</option>
+                <option value="shortest" ${currentFeedState.sortBy === 'shortest' ? 'selected' : ''}>Shortest First</option>
+                <option value="title" ${currentFeedState.sortBy === 'title' ? 'selected' : ''}>Title (A–Z)</option>
+              </select>
             </div>
           </div>
-          <button onclick="toggleSub(${collectionId || Date.now()}, '${escapeAttr(podTitle)}', '', '${escapeAttr(feedUrl)}', '${escapeAttr(hiResArt)}')" 
-            class="text-xs px-3 py-1.5 rounded-lg border font-medium transition ${isSub ? 'border-zinc-700 text-zinc-400' : 'border-white bg-white text-black'}">
-            ${isSub ? 'Subscribed' : '+ Subscribe'}
-          </button>
         </div>
-      ` + episodes.map(ep => {
+
+        <!-- Episodes List Container -->
+        <div id="episodes-list-container" class="space-y-2"></div>
+      `;
+
+      renderEpisodesListOnly();
+    }
+
+    function renderEpisodesListOnly() {
+      const container = document.getElementById('episodes-list-container');
+      const countEl = document.getElementById('feed-total-count');
+      if (!container) return;
+
+      const sorted = getSortedAndFilteredEpisodes();
+      const total = sorted.length;
+      const visible = sorted.slice(0, currentFeedState.visibleCount);
+
+      if (countEl) {
+        const archiveNote = currentFeedState.loadingRss ? ' · Syncing full archive...' : '';
+        countEl.textContent = `${currentFeedState.episodes.length} episodes available${archiveNote}`;
+      }
+
+      if (total === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-xs text-zinc-500 border border-dashed border-zinc-800 rounded-xl">No episodes match "${escapeHtml(currentFeedState.filterQuery)}".</div>`;
+        return;
+      }
+
+      const { podTitle, art } = currentFeedState;
+
+      const rowsHtml = visible.map(ep => {
         const epPayload = encodeURIComponent(JSON.stringify({
           title: ep.title,
           podcast: podTitle,
           audioUrl: ep.audioUrl,
-          art: ep.art || hiResArt
+          art: ep.art || art
         }));
         const metaLine = [ep.pubDate, ep.duration].filter(Boolean).join(' · ') || podTitle;
         return `
@@ -560,6 +845,32 @@
           </div>
         `;
       }).join('');
+
+      let footerActionHtml = '';
+      if (visible.length < total) {
+        const remaining = total - visible.length;
+        const nextBatch = Math.min(30, remaining);
+        footerActionHtml = `
+          <div class="pt-2 pb-1">
+            <button onclick="loadMoreEpisodes()" class="w-full py-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-xs font-semibold text-white transition flex items-center justify-center gap-2">
+              <span>Load ${nextBatch} More Episodes</span>
+              <span class="text-zinc-500 font-normal">(Showing ${visible.length} of ${total})</span>
+            </button>
+          </div>
+        `;
+      } else if (currentFeedState.feedUrl && !currentFeedState.fullRssLoaded) {
+        footerActionHtml = `
+          <div class="pt-2 pb-1">
+            <button onclick="unlockFullRssArchive(false)" class="w-full py-2.5 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white transition">
+              ${currentFeedState.loadingRss ? 'Checking Full RSS Archive...' : 'Load Complete RSS Back-Catalog'}
+            </button>
+          </div>
+        `;
+      } else if (total > 30) {
+        footerActionHtml = `<div class="text-center text-[11px] text-zinc-600 py-2">Showing all ${total} episodes</div>`;
+      }
+
+      container.innerHTML = rowsHtml + footerActionHtml;
     }
 
     // --- QUEUE MANAGEMENT ---
@@ -846,7 +1157,6 @@
       const npBadge = document.getElementById('np-sleep-countdown');
       const mins = parseInt(minutes, 10);
 
-      // Keep both dropdowns in sync
       document.getElementById('sleep-select').value = String(mins);
       document.getElementById('np-sleep-select').value = String(mins);
 
