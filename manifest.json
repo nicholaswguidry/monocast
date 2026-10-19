@@ -1,0 +1,26 @@
+{
+  "id": "/monocast/",
+  "name": "mono.cast Podcast Player",
+  "short_name": "mono.cast",
+  "description": "Minimalist Podcast Player with Bedtime Bookmarks and Custom Queue",
+  "start_url": "/monocast/",
+  "scope": "/monocast/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "icons": [
+    {
+      "src": "https://placehold.co/192x192/09090b/ffffff.png?text=mono",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://placehold.co/512x512/09090b/ffffff.png?text=mono",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
