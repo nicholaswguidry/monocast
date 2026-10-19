@@ -199,8 +199,8 @@
           <span class="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800">PWA</span>
         </div>
         <!-- Mobile Install App Button -->
-        <button id="install-btn-mobile" onclick="openInstallModal()" class="sm:hidden flex items-center gap-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-medium transition shadow-sm">
-          <span>📲</span> Fix / Install App
+        <button id="install-btn-mobile" onclick="openInstallModal()" class="sm:hidden flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-3 py-1.5 rounded-xl text-xs font-medium transition shadow-sm">
+          <span>⚙️</span> PWA Setup
         </button>
       </div>
 
@@ -221,8 +221,8 @@
       </nav>
 
       <!-- Desktop Install App Button -->
-      <button id="install-btn-desktop" onclick="openInstallModal()" class="hidden sm:flex items-center gap-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 px-3.5 py-1.5 rounded-xl text-xs font-medium transition shadow-sm flex-shrink-0">
-        <span>📲</span> Fix / Install App
+      <button id="install-btn-desktop" onclick="openInstallModal()" class="hidden sm:flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-3.5 py-1.5 rounded-xl text-xs font-medium transition shadow-sm flex-shrink-0">
+        <span>⚙️</span> PWA Setup
       </button>
     </header>
 
@@ -230,14 +230,14 @@
     <main class="mt-6">
 
       <!-- Instant Banner Explaining Pixel Shortcut / GitHub Pages Install -->
-      <div id="github-install-banner" class="mb-5 bg-zinc-900/90 border border-zinc-800 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div id="github-install-banner" class="hidden mb-5 bg-zinc-900/90 border border-zinc-800 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="text-xs text-zinc-300 leading-relaxed">
           <span class="inline-block bg-emerald-500/20 text-emerald-300 font-semibold px-2 py-0.5 rounded text-[10px] uppercase tracking-wider mr-1.5">Pixel Tip</span>
-          Getting <strong>"App cannot be installed"</strong> on <code class="font-mono text-white">nicholaswguidry.github.io/monocast/</code>? Tap <strong>Add to Home screen → Create shortcut</strong> for instant fullscreen, or add <code class="font-mono text-white">manifest.json</code>.
+          Want to install on your Home Screen? Tap <strong>PWA Setup</strong> for 1-tap files or use Chrome's <strong>Add to Home screen</strong>.
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
           <button onclick="openInstallModal()" class="bg-white text-black hover:bg-zinc-200 px-3 py-1.5 rounded-xl text-xs font-semibold transition whitespace-nowrap">
-            Fix GitHub Pages Install (2 Steps)
+            PWA Setup
           </button>
           <button onclick="document.getElementById('github-install-banner').classList.add('hidden')" class="text-zinc-500 hover:text-white text-xs px-1.5 py-1">✕</button>
         </div>
@@ -258,14 +258,14 @@
           </button>
         </div>
 
-        <!-- Quick Topic Pills -->
+        <!-- Quick Topic Pills (Direct Instant Episode Loaders) -->
         <div class="flex items-center gap-2 overflow-x-auto pb-1">
-          <span class="text-[11px] text-zinc-500 flex-shrink-0">Try:</span>
-          <button onclick="quickSearch('Hardcore History')" class="text-[11px] bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-2.5 py-1 rounded-lg transition whitespace-nowrap">Hardcore History</button>
-          <button onclick="quickSearch('Fall of Civilizations')" class="text-[11px] bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-2.5 py-1 rounded-lg transition whitespace-nowrap">Fall of Civilizations</button>
-          <button onclick="quickSearch('Lex Fridman')" class="text-[11px] bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-2.5 py-1 rounded-lg transition whitespace-nowrap">Lex Fridman</button>
-          <button onclick="quickSearch('99% Invisible')" class="text-[11px] bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-2.5 py-1 rounded-lg transition whitespace-nowrap">99% Invisible</button>
-          <button onclick="quickSearch('Darknet Diaries')" class="text-[11px] bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-2.5 py-1 rounded-lg transition whitespace-nowrap">Darknet Diaries</button>
+          <span class="text-[11px] text-zinc-500 flex-shrink-0">Instant Load:</span>
+          <button onclick="loadFeed('https://feeds.simplecast.com/BqbsxVfO', '99% Invisible', 'https://placehold.co/200x200/18181b/ffffff?text=99%25I', 394775318)" class="text-[11px] bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-2.5 py-1 rounded-lg transition whitespace-nowrap">99% Invisible</button>
+          <button onclick="loadFeed('http://feeds.feedburner.com/dancarlin/history', 'Dan Carlin\'s Hardcore History', 'https://placehold.co/200x200/18181b/f59e0b?text=HH', 173001861)" class="text-[11px] bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-2.5 py-1 rounded-lg transition whitespace-nowrap">Hardcore History</button>
+          <button onclick="loadFeed('https://lexfridman.com/feed/podcast/', 'Lex Fridman Podcast', 'https://placehold.co/200x200/18181b/38bdf8?text=LEX', 1434243584)" class="text-[11px] bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-2.5 py-1 rounded-lg transition whitespace-nowrap">Lex Fridman</button>
+          <button onclick="loadFeed('https://audioboom.com/channels/2399216.rss', 'No Such Thing As A Fish', 'https://placehold.co/200x200/18181b/a3e635?text=FISH', 840986946)" class="text-[11px] bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-2.5 py-1 rounded-lg transition whitespace-nowrap">No Such Thing As A Fish</button>
+          <button onclick="loadFeed('https://feeds.megaphone.fm/stuffyoushouldknow', 'Stuff You Should Know', 'https://placehold.co/200x200/18181b/fb7185?text=SYSK', 278981407)" class="text-[11px] bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-2.5 py-1 rounded-lg transition whitespace-nowrap">Stuff You Should Know</button>
         </div>
 
         <!-- Subscriptions Shelf -->
@@ -402,7 +402,7 @@
           <button onclick="skip(-15)" title="Rewind 15 seconds" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 px-2.5 py-1.5 rounded-xl text-xs font-mono transition">
             -15s
           </button>
-          <button onclick="togglePlay()" id="play-btn" class="bg-white hover:bg-zinc-200 text-black px-5 py-1.5 rounded-xl text-xs font-bold transition min-w-[68px]">
+          <button onclick="togglePlay()" id="play-btn" class="bg-white hover:bg-zinc-200 text-black px-5 py-1.5 rounded-xl text-xs font-bold transition min-w-[78px]">
             Play
           </button>
           <button onclick="skip(30)" title="Forward 30 seconds" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 px-2.5 py-1.5 rounded-xl text-xs font-mono transition">
@@ -433,31 +433,44 @@
 
       </div>
     </div>
-    <audio id="audio-player" preload="metadata"></audio>
+    <audio id="audio-player" preload="metadata" playsinline></audio>
   </footer>
 
   <!-- APPLICATION LOGIC -->
   <script>
     // ==========================================
-    // 1. STATE &PERSISTENT STORAGE
+    // 1. STATE & PERSISTENT STORAGE
     // ==========================================
-    const FALLBACK_EPISODES = [
+    // Default Starter Subscriptions with verified Apple iTunes collectionIds
+    const DEFAULT_SUBSCRIPTIONS = [
       {
-        title: "The Built Environment & Everyday Design",
-        podcast: "99% Invisible",
-        audioUrl: "https://cdn.simplecast.com/audio/eb888176-c878-4018-a9d6-14f8a22f3c42/episodes/f0955a30-79a9-4a76-b2df-8b257cf55a53/audio/128/default.mp3",
+        id: 394775318,
+        title: "99% Invisible",
+        feedUrl: "https://feeds.simplecast.com/BqbsxVfO",
         art: "https://placehold.co/200x200/18181b/ffffff?text=99%25+I"
       },
       {
-        title: "Supernova in the East (Sample Stream)",
-        podcast: "Hardcore History",
-        audioUrl: "https://traffic.libsyn.com/secure/dancarlinhh/dchha62_Supernova_in_the_East_I.mp3",
+        id: 173001861,
+        title: "Dan Carlin's Hardcore History",
+        feedUrl: "http://feeds.feedburner.com/dancarlin/history",
         art: "https://placehold.co/200x200/18181b/f59e0b?text=HH"
+      },
+      {
+        id: 1434243584,
+        title: "Lex Fridman Podcast",
+        feedUrl: "https://lexfridman.com/feed/podcast/",
+        art: "https://placehold.co/200x200/18181b/38bdf8?text=LEX"
+      },
+      {
+        id: 840986946,
+        title: "No Such Thing As A Fish",
+        feedUrl: "https://audioboom.com/channels/2399216.rss",
+        art: "https://placehold.co/200x200/18181b/a3e635?text=FISH"
       }
     ];
 
     let state = {
-      subscriptions: JSON.parse(localStorage.getItem('pod_subs') || '[]'),
+      subscriptions: JSON.parse(localStorage.getItem('pod_subs') || 'null') || DEFAULT_SUBSCRIPTIONS,
       playlist: JSON.parse(localStorage.getItem('pod_playlist') || '[]'),
       bookmarks: JSON.parse(localStorage.getItem('pod_bookmarks') || '[]'),
       currentEpisode: JSON.parse(localStorage.getItem('pod_current') || 'null')
@@ -467,6 +480,8 @@
     let sleepInterval = null;
     let sleepSecondsRemaining = 0;
     let draggedQueueIndex = null;
+    let isBuffering = false;
+    let pendingSeekSeconds = 0;
 
     function saveState() {
       localStorage.setItem('pod_subs', JSON.stringify(state.subscriptions));
@@ -476,6 +491,12 @@
       renderSubscriptions();
       renderPlaylist();
       renderBookmarks();
+    }
+
+    // Upgrade any legacy http:// stream URL to https:// so Android PWA mixed-content policy never blocks audio
+    function normalizeAudioUrl(url) {
+      if (!url) return '';
+      return String(url).trim().replace(/^http:\/\//i, 'https://');
     }
 
     // ==========================================
@@ -511,7 +532,7 @@
     }
 
     // ==========================================
-    // 4. PODCAST SEARCH & MULTI-PROXY RSS PARSER
+    // 4. BULLETPROOF EPISODE ENGINE (APPLE ITUNES API PRIMARY + RSS FALLBACK)
     // ==========================================
     function quickSearch(term) {
       const input = document.getElementById('search-input');
@@ -523,30 +544,31 @@
       const q = document.getElementById('search-input').value.trim();
       if (!q) return;
       const area = document.getElementById('results-area');
-      area.innerHTML = `<div class="text-xs text-zinc-400 py-4 text-center animate-pulse">Searching iTunes Podcast Directory for "${escapeHtml(q)}"...</div>`;
+      area.innerHTML = `<div class="text-xs text-zinc-400 py-4 text-center animate-pulse">Searching Apple Podcast Directory for "${escapeHtml(q)}"...</div>`;
       try {
-        const res = await fetch(`https://itunes.apple.com/search?media=podcast&term=${encodeURIComponent(q)}&limit=10`);
+        const res = await fetch(`https://itunes.apple.com/search?media=podcast&entity=podcast&term=${encodeURIComponent(q)}&limit=12`);
         const data = await res.json();
         if (!data.results || data.results.length === 0) {
           area.innerHTML = `<div class="text-xs text-zinc-500 py-4 text-center">No podcasts found for "${escapeHtml(q)}".</div>`;
           return;
         }
-        area.innerHTML = `<div class="text-xs font-medium text-zinc-400 pb-1">Search Results — Tap a podcast to browse episodes</div>` +
+        area.innerHTML = `<div class="text-xs font-medium text-zinc-400 pb-1">Search Results — Tap any podcast to load episodes</div>` +
           data.results.map(pod => {
-            const isSub = state.subscriptions.some(s => s.id === pod.collectionId);
+            const isSub = state.subscriptions.some(s => String(s.id) === String(pod.collectionId));
             const safeName = escapeAttr(pod.collectionName);
             const safeFeed = escapeAttr(pod.feedUrl || '');
             const safeArt = escapeAttr(pod.artworkUrl600 || pod.artworkUrl100 || '');
+            const colId = pod.collectionId || 0;
             return `
               <div class="flex items-center justify-between p-3 border border-zinc-800/90 rounded-2xl bg-zinc-900/40 hover:bg-zinc-900/80 transition gap-3">
-                <div class="flex items-center gap-3 overflow-hidden cursor-pointer flex-1" onclick="loadFeed('${safeFeed}', '${safeName}', '${safeArt}')">
+                <div class="flex items-center gap-3 overflow-hidden cursor-pointer flex-1" onclick="loadFeed('${safeFeed}', '${safeName}', '${safeArt}', ${colId})">
                   <img src="${escapeHtml(pod.artworkUrl100 || '')}" onerror="this.src='https://placehold.co/100x100/18181b/71717a?text=POD'" class="w-12 h-12 rounded-xl object-cover border border-zinc-800 flex-shrink-0">
                   <div class="truncate">
                     <div class="text-sm font-semibold text-white truncate">${escapeHtml(pod.collectionName)}</div>
-                    <div class="text-xs text-zinc-400 truncate">${escapeHtml(pod.artistName)} · <span class="text-zinc-500">Tap for episodes</span></div>
+                    <div class="text-xs text-zinc-400 truncate">${escapeHtml(pod.artistName)} · <span class="text-emerald-400">Tap for episodes</span></div>
                   </div>
                 </div>
-                <button onclick="toggleSub(${pod.collectionId}, '${safeName}', '${safeFeed}', '${safeArt}')" 
+                <button onclick="toggleSub(${colId}, '${safeName}', '${safeFeed}', '${safeArt}')" 
                   class="text-xs px-3 py-1.5 rounded-xl font-medium transition flex-shrink-0 border ${isSub ? 'border-zinc-700 bg-zinc-800/70 text-zinc-300' : 'border-white bg-white text-black hover:bg-zinc-200'}">
                   ${isSub ? '✓ Subscribed' : '+ Subscribe'}
                 </button>
@@ -559,7 +581,7 @@
     }
 
     function toggleSub(id, title, feedUrl, art) {
-      const idx = state.subscriptions.findIndex(s => s.id === id);
+      const idx = state.subscriptions.findIndex(s => String(s.id) === String(id) || s.title === title);
       if (idx > -1) {
         state.subscriptions.splice(idx, 1);
         showToast(`Unsubscribed from ${title}`);
@@ -578,15 +600,16 @@
 
       empty.classList.toggle('hidden', state.subscriptions.length > 0);
       if (countLabel) {
-        countLabel.textContent = state.subscriptions.length > 0 ? `${state.subscriptions.length} saved` : '';
+        countLabel.textContent = state.subscriptions.length > 0 ? `${state.subscriptions.length} saved — Tap to load episodes` : '';
       }
 
       list.innerHTML = state.subscriptions.map(s => {
         const safeTitle = escapeAttr(s.title);
-        const safeFeed = escapeAttr(s.feedUrl);
-        const safeArt = escapeAttr(s.art);
+        const safeFeed = escapeAttr(s.feedUrl || '');
+        const safeArt = escapeAttr(s.art || '');
+        const colId = s.id || 0;
         return `
-          <div onclick="loadFeed('${safeFeed}', '${safeTitle}', '${safeArt}')" class="flex-shrink-0 w-20 cursor-pointer group">
+          <div onclick="loadFeed('${safeFeed}', '${safeTitle}', '${safeArt}', ${colId})" class="flex-shrink-0 w-20 cursor-pointer group">
             <img src="${escapeHtml(s.art)}" onerror="this.src='https://placehold.co/100x100/18181b/71717a?text=POD'" class="w-20 h-20 rounded-2xl object-cover border border-zinc-800 group-hover:border-white transition shadow-md">
             <div class="text-[11px] font-medium text-zinc-300 truncate mt-1.5 group-hover:text-white">${escapeHtml(s.title)}</div>
           </div>
@@ -594,82 +617,147 @@
       }).join('');
     }
 
-    async function loadFeed(feedUrl, podTitle, art) {
-      if (!feedUrl) {
-        showToast('No RSS feed URL available for this podcast.');
-        return;
-      }
+    // Primary Episode Loader: Uses Apple's official CORS-enabled Episode Lookup API first, then falls back to RSS
+    async function loadFeed(feedUrl, podTitle, art, collectionId = 0, autoCueFirst = false) {
       const area = document.getElementById('results-area');
-      area.innerHTML = `<div class="text-xs text-zinc-400 py-6 text-center animate-pulse">Fetching episodes for <strong>${escapeHtml(podTitle)}</strong>...</div>`;
+      area.innerHTML = `<div class="text-xs text-zinc-400 py-6 text-center animate-pulse">Loading playable episodes for <strong>${escapeHtml(podTitle)}</strong>...</div>`;
 
       let episodes = [];
+      let resolvedId = collectionId;
+      let resolvedArt = art;
 
-      // Stage 1: Try rss2json API
-      try {
-        const res1 = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`);
-        if (res1.ok) {
-          const data1 = await res1.json();
-          if (data1.status === 'ok' && Array.isArray(data1.items) && data1.items.length > 0) {
-            episodes = data1.items.map(item => ({
-              title: item.title || 'Untitled Episode',
-              audioUrl: (item.enclosure && item.enclosure.link) ? item.enclosure.link : '',
-              pubDate: item.pubDate ? item.pubDate.split(' ')[0] : ''
-            })).filter(ep => ep.audioUrl);
-          }
-        }
-      } catch (err) {}
-
-      // Stage 2: Fallback to AllOrigins XML proxy
-      if (episodes.length === 0) {
+      // Strategy 1A: If collectionId is missing (e.g. older saved subscription), resolve it via iTunes Search
+      if (!resolvedId && podTitle) {
         try {
-          const res2 = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(feedUrl)}`);
-          if (res2.ok) {
-            const data2 = await res2.json();
-            if (data2.contents) {
-              episodes = parseRssXmlString(data2.contents);
+          const searchRes = await fetch(`https://itunes.apple.com/search?media=podcast&entity=podcast&term=${encodeURIComponent(podTitle)}&limit=5`);
+          if (searchRes.ok) {
+            const searchData = await searchRes.json();
+            if (searchData.results && searchData.results.length > 0) {
+              const match = searchData.results.find(r => r.feedUrl === feedUrl) || searchData.results[0];
+              resolvedId = match.collectionId;
+              if (match.artworkUrl600 || match.artworkUrl100) {
+                resolvedArt = match.artworkUrl600 || match.artworkUrl100;
+              }
+              // Backfill collectionId into saved subscriptions so future loads are instant
+              const subItem = state.subscriptions.find(s => s.title === podTitle || (feedUrl && s.feedUrl === feedUrl));
+              if (subItem && resolvedId) {
+                subItem.id = resolvedId;
+                if (resolvedArt) subItem.art = resolvedArt;
+                saveState();
+              }
             }
           }
         } catch (err) {}
       }
 
-      // Stage 3: Fallback to CodeTabs XML proxy
-      if (episodes.length === 0) {
+      // Strategy 1B (Primary - 100% CORS-enabled official Apple Podcast Episode API)
+      if (resolvedId) {
         try {
-          const res3 = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(feedUrl)}`);
-          if (res3.ok) {
-            const xmlText = await res3.text();
-            episodes = parseRssXmlString(xmlText);
+          const lookupRes = await fetch(`https://itunes.apple.com/lookup?id=${resolvedId}&media=podcast&entity=podcastEpisode&limit=30`);
+          if (lookupRes.ok) {
+            const lookupData = await lookupRes.json();
+            if (lookupData.results && lookupData.results.length > 0) {
+              const podMeta = lookupData.results.find(item => item.wrapperType === 'track' || item.kind === 'podcast');
+              if (podMeta && (podMeta.artworkUrl600 || podMeta.artworkUrl100)) {
+                resolvedArt = podMeta.artworkUrl600 || podMeta.artworkUrl100;
+                const subItem = state.subscriptions.find(s => String(s.id) === String(resolvedId));
+                if (subItem && subItem.art && subItem.art.includes('placehold.co')) {
+                  subItem.art = resolvedArt;
+                  saveState();
+                }
+              }
+
+              episodes = lookupData.results
+                .filter(item => item.wrapperType === 'podcastEpisode' && (item.episodeUrl || item.previewUrl))
+                .map(item => {
+                  const rawDate = item.releaseDate ? item.releaseDate.split('T')[0] : '';
+                  const mins = item.trackTimeMillis ? Math.round(item.trackTimeMillis / 60000) : 0;
+                  return {
+                    title: item.trackName || 'Untitled Episode',
+                    audioUrl: normalizeAudioUrl(item.episodeUrl || item.previewUrl),
+                    pubDate: rawDate,
+                    durationLabel: mins > 0 ? `${mins} min` : '',
+                    art: item.artworkUrl160 || item.artworkUrl600 || resolvedArt
+                  };
+                });
+            }
           }
         } catch (err) {}
+      }
+
+      // Strategy 2: Direct RSS Fetch (works for Anchor, Substack, Libsyn, Megaphone feeds with CORS *)
+      if (episodes.length === 0 && feedUrl) {
+        try {
+          const directRes = await fetch(feedUrl);
+          if (directRes.ok) {
+            const xmlText = await directRes.text();
+            episodes = parseRssXmlString(xmlText, resolvedArt);
+          }
+        } catch (err) {}
+      }
+
+      // Strategy 3: CORS Proxy Fallbacks if direct RSS had no CORS headers
+      if (episodes.length === 0 && feedUrl) {
+        const proxyUrls = [
+          `https://corsproxy.io/?${encodeURIComponent(feedUrl)}`,
+          `https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`,
+          `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(feedUrl)}`
+        ];
+        for (const pUrl of proxyUrls) {
+          if (episodes.length > 0) break;
+          try {
+            const pRes = await fetch(pUrl);
+            if (pRes.ok) {
+              const xmlText = await pRes.text();
+              episodes = parseRssXmlString(xmlText, resolvedArt);
+            }
+          } catch (err) {}
+        }
       }
 
       if (episodes.length === 0) {
         area.innerHTML = `
           <div class="p-4 border border-zinc-800 rounded-2xl bg-zinc-900/40 text-center space-y-2">
-            <p class="text-xs text-amber-300">This publisher's RSS feed blocked browser proxy requests.</p>
-            <p class="text-[11px] text-zinc-500">Try another podcast or play one of the preloaded episodes below.</p>
+            <p class="text-xs text-amber-300">Could not load episodes for "${escapeHtml(podTitle)}".</p>
+            <p class="text-[11px] text-zinc-500">Try searching for the podcast by name above so Apple's Episode Directory can index it.</p>
           </div>
         `;
         return;
       }
 
+      // If no episode is currently loaded in the player (or the old fallback was broken), cue the newest real episode
+      if (autoCueFirst || !state.currentEpisode || !state.currentEpisode.audioUrl) {
+        state.currentEpisode = {
+          title: episodes[0].title,
+          podcast: podTitle,
+          audioUrl: episodes[0].audioUrl,
+          art: episodes[0].art || resolvedArt || 'https://placehold.co/120x120/18181b/71717a?text=POD'
+        };
+        saveState();
+        loadCurrentIntoPlayer(0, false);
+      }
+
       area.innerHTML = `
         <div class="flex items-center justify-between pb-1 pt-2">
-          <div class="text-xs font-semibold text-white">Latest Episodes — ${escapeHtml(podTitle)}</div>
-          <span class="text-[11px] text-zinc-500">${episodes.length} episodes</span>
+          <div class="flex items-center gap-2">
+            <img src="${escapeHtml(resolvedArt || '')}" onerror="this.src='https://placehold.co/60x60/18181b/71717a?text=POD'" class="w-6 h-6 rounded-md object-cover border border-zinc-800">
+            <div class="text-xs font-semibold text-white">Episodes — ${escapeHtml(podTitle)}</div>
+          </div>
+          <span class="text-[11px] text-emerald-400 font-mono">${episodes.length} ready to stream</span>
         </div>
-      ` + episodes.slice(0, 25).map(item => {
+      ` + episodes.slice(0, 30).map(item => {
         const epPayload = encodeURIComponent(JSON.stringify({
           title: item.title,
           podcast: podTitle,
           audioUrl: item.audioUrl,
-          art: art || 'https://placehold.co/120x120/18181b/71717a?text=POD'
+          art: item.art || resolvedArt || 'https://placehold.co/120x120/18181b/71717a?text=POD'
         }));
+        const metaParts = [podTitle, item.pubDate, item.durationLabel].filter(Boolean).join(' · ');
         return `
           <div class="flex items-center justify-between p-3 border border-zinc-800/80 rounded-2xl bg-zinc-900/30 hover:bg-zinc-900/70 transition gap-3">
-            <div class="truncate flex-1">
+            <div class="truncate flex-1 cursor-pointer" onclick="playEpisode('${epPayload}')">
               <div class="text-xs font-semibold text-white truncate">${escapeHtml(item.title)}</div>
-              <div class="text-[11px] text-zinc-500 mt-0.5">${escapeHtml(podTitle)} ${item.pubDate ? '· ' + escapeHtml(item.pubDate) : ''}</div>
+              <div class="text-[11px] text-zinc-500 mt-0.5 truncate">${escapeHtml(metaParts)}</div>
             </div>
             <div class="flex items-center gap-1.5 flex-shrink-0">
               <button onclick="playEpisode('${epPayload}')" class="bg-white hover:bg-zinc-200 text-black px-3 py-1.5 rounded-xl text-xs font-semibold transition">
@@ -684,17 +772,18 @@
       }).join('');
     }
 
-    function parseRssXmlString(xmlString) {
+    function parseRssXmlString(xmlString, fallbackArt) {
       try {
         const xml = new DOMParser().parseFromString(xmlString, "text/xml");
-        const items = Array.from(xml.querySelectorAll("item")).slice(0, 25);
+        const items = Array.from(xml.querySelectorAll("item")).slice(0, 30);
         return items.map(item => {
           const epTitle = item.querySelector("title")?.textContent || "Untitled Episode";
           const enclosure = item.querySelector("enclosure");
-          const audioUrl = enclosure ? enclosure.getAttribute("url") : "";
+          const rawUrl = enclosure ? enclosure.getAttribute("url") : "";
+          const audioUrl = normalizeAudioUrl(rawUrl);
           const pubDateRaw = item.querySelector("pubDate")?.textContent || "";
           const pubDate = pubDateRaw ? pubDateRaw.split(' ').slice(0, 4).join(' ') : "";
-          return { title: epTitle, audioUrl, pubDate };
+          return { title: epTitle, audioUrl, pubDate, durationLabel: '', art: fallbackArt };
         }).filter(ep => ep.audioUrl);
       } catch (e) {
         return [];
@@ -799,33 +888,30 @@
     }
 
     // ==========================================
-    // 6. AUDIO ENGINE & OS MEDIASESSION WIDGET
+    // 6. ANDROID PWA AUDIO ENGINE & OS MEDIASESSION WIDGET
     // ==========================================
+    function updatePlayButtonsText(label) {
+      const pBtn = document.getElementById('play-btn');
+      const wBtn = document.getElementById('widget-play-btn');
+      if (pBtn) pBtn.textContent = label;
+      if (wBtn) wBtn.textContent = label;
+    }
+
     function playEpisode(encodedEp, startTime = 0) {
       const ep = typeof encodedEp === 'string' ? JSON.parse(decodeURIComponent(encodedEp)) : encodedEp;
+      ep.audioUrl = normalizeAudioUrl(ep.audioUrl);
       state.currentEpisode = ep;
       saveState();
       loadCurrentIntoPlayer(startTime, true);
     }
 
     function loadCurrentIntoPlayer(startTime = 0, autoPlay = false) {
-      if (!state.currentEpisode) return;
+      if (!state.currentEpisode || !state.currentEpisode.audioUrl) return;
       const ep = state.currentEpisode;
-      if (audio.src !== ep.audioUrl) {
-        audio.src = ep.audioUrl;
-      }
-      if (startTime > 0) {
-        const setStart = () => {
-          audio.currentTime = startTime;
-          audio.removeEventListener('loadedmetadata', setStart);
-        };
-        if (audio.readyState >= 1) {
-          audio.currentTime = startTime;
-        } else {
-          audio.addEventListener('loadedmetadata', setStart);
-        }
-      }
+      const cleanUrl = normalizeAudioUrl(ep.audioUrl);
+      ep.audioUrl = cleanUrl;
 
+      // Update Player & 4x2 Widget UI immediately
       ['player', 'widget'].forEach(prefix => {
         const titleEl = document.getElementById(`${prefix}-title`);
         const podEl = document.getElementById(`${prefix}-podcast`);
@@ -835,6 +921,19 @@
         if (artEl) artEl.src = ep.art || 'https://placehold.co/120x120/18181b/71717a?text=MONO';
       });
 
+      pendingSeekSeconds = startTime > 0 ? startTime : 0;
+
+      if (audio.src !== cleanUrl) {
+        audio.src = cleanUrl;
+        audio.load();
+      } else if (pendingSeekSeconds > 0 && audio.readyState >= 1) {
+        try {
+          audio.currentTime = pendingSeekSeconds;
+          pendingSeekSeconds = 0;
+        } catch (err) {}
+      }
+
+      // Register Native Android / iOS Lock Screen Media Controls
       if ('mediaSession' in navigator) {
         try {
           navigator.mediaSession.metadata = new MediaMetadata({
@@ -843,8 +942,8 @@
             album: 'mono.cast',
             artwork: [{ src: ep.art || 'https://placehold.co/192x192/0f0f11/ffffff.png?text=mono', sizes: '192x192', type: 'image/png' }]
           });
-          navigator.mediaSession.setActionHandler('play', () => audio.play());
-          navigator.mediaSession.setActionHandler('pause', () => audio.pause());
+          navigator.mediaSession.setActionHandler('play', () => togglePlay());
+          navigator.mediaSession.setActionHandler('pause', () => togglePlay());
           navigator.mediaSession.setActionHandler('seekbackward', () => skip(-15));
           navigator.mediaSession.setActionHandler('seekforward', () => skip(30));
           navigator.mediaSession.setActionHandler('nexttrack', () => playNextInQueue());
@@ -852,31 +951,48 @@
       }
 
       if (autoPlay) {
-        audio.play().catch(() => {
-          showToast('Tap Play to start audio stream');
-        });
+        updatePlayButtonsText('Loading...');
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((err) => {
+            updatePlayButtonsText('Play');
+            showToast('Stream could not start automatically — Tap Play or pick another episode.');
+          });
+        }
       }
     }
 
     function togglePlay() {
-      if (!audio.src && state.currentEpisode) {
+      if (!state.currentEpisode || !state.currentEpisode.audioUrl) {
+        showToast('Tap any episode in the list to start playing');
+        return;
+      }
+      const cleanUrl = normalizeAudioUrl(state.currentEpisode.audioUrl);
+      if (!audio.src || audio.src === window.location.href) {
         loadCurrentIntoPlayer(0, true);
         return;
       }
-      if (!audio.src) {
-        showToast('Select a podcast episode first');
-        return;
+      if (audio.paused) {
+        updatePlayButtonsText('Loading...');
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            updatePlayButtonsText('Play');
+            showToast('Unable to play this stream URL. Try another episode.');
+          });
+        }
+      } else {
+        audio.pause();
       }
-      audio.paused ? audio.play() : audio.pause();
     }
 
     function skip(sec) {
-      if (!audio.src) return;
+      if (!audio.src || audio.readyState < 1) return;
       audio.currentTime = Math.max(0, (audio.currentTime || 0) + sec);
     }
 
     function seekAudio(val) {
-      if (!audio.duration) return;
+      if (!audio.duration || isNaN(audio.duration)) return;
       audio.currentTime = (val / 1000) * audio.duration;
     }
 
@@ -890,14 +1006,52 @@
       playEpisode(nextEp, 0);
     }
 
+    // Apply pending bookmark/resume timestamp safely once Android Chrome has parsed audio metadata
+    audio.addEventListener('loadedmetadata', () => {
+      if (pendingSeekSeconds > 0) {
+        try {
+          audio.currentTime = pendingSeekSeconds;
+          showToast(`Resumed at ${formatTime(pendingSeekSeconds)}`);
+        } catch (e) {}
+        pendingSeekSeconds = 0;
+      }
+      const dur = formatTime(audio.duration || 0);
+      document.getElementById('duration-time').textContent = dur;
+    });
+
+    audio.addEventListener('waiting', () => {
+      isBuffering = true;
+      updatePlayButtonsText('Buffering...');
+    });
+
+    audio.addEventListener('playing', () => {
+      isBuffering = false;
+      updatePlayButtonsText('Pause');
+    });
+
+    audio.addEventListener('canplay', () => {
+      if (!audio.paused) {
+        updatePlayButtonsText('Pause');
+      } else {
+        updatePlayButtonsText('Play');
+      }
+    });
+
     audio.addEventListener('play', () => {
-      document.getElementById('play-btn').textContent = 'Pause';
-      document.getElementById('widget-play-btn').textContent = 'Pause';
+      updatePlayButtonsText('Pause');
     });
 
     audio.addEventListener('pause', () => {
-      document.getElementById('play-btn').textContent = 'Play';
-      document.getElementById('widget-play-btn').textContent = 'Play';
+      isBuffering = false;
+      updatePlayButtonsText('Play');
+    });
+
+    audio.addEventListener('error', () => {
+      isBuffering = false;
+      updatePlayButtonsText('Play');
+      if (audio.src && audio.src !== window.location.href) {
+        showToast('Audio stream error — try picking another episode from the list.');
+      }
     });
 
     audio.addEventListener('timeupdate', () => {
@@ -906,7 +1060,7 @@
       document.getElementById('current-time').textContent = cur;
       document.getElementById('duration-time').textContent = dur;
       document.getElementById('widget-time').textContent = `${cur} / ${dur}`;
-      if (audio.duration) {
+      if (audio.duration && !isNaN(audio.duration)) {
         const pct = (audio.currentTime / audio.duration) * 100;
         document.getElementById('seek-bar').value = Math.floor(pct * 10);
         const wProg = document.getElementById('widget-progress');
@@ -1191,18 +1345,35 @@ self.addEventListener('fetch', (event) => {
 
     window.onload = function () {
       checkStandaloneMode();
+
+      // Upgrade any old saved subscriptions that lacked collectionIds
+      if (!state.subscriptions || state.subscriptions.length === 0) {
+        state.subscriptions = DEFAULT_SUBSCRIPTIONS;
+      }
+
+      // Clear out the old broken hardcoded sample URL if it was cached in localStorage
+      if (state.currentEpisode && state.currentEpisode.audioUrl && state.currentEpisode.audioUrl.includes('eb888176-c878-4018-a9d6-14f8a22f3c42')) {
+        state.currentEpisode = null;
+        localStorage.removeItem('pod_current');
+      }
+
       renderSubscriptions();
       renderPlaylist();
       renderBookmarks();
-      if (state.currentEpisode) {
-        loadCurrentIntoPlayer(0, false);
-      } else {
-        // Pre-populate a default featured episode so the player is ready to test right away
-        state.currentEpisode = FALLBACK_EPISODES[0];
+
+      if (state.currentEpisode && state.currentEpisode.audioUrl) {
         loadCurrentIntoPlayer(0, false);
       }
-      // Load initial discovery results so the screen isn't bare
-      quickSearch('99% Invisible');
+
+      // Immediately load live playable episodes from Apple's Podcast Episode API (and auto-cue the top episode if needed)
+      const firstSub = state.subscriptions[0] || DEFAULT_SUBSCRIPTIONS[0];
+      loadFeed(
+        firstSub.feedUrl,
+        firstSub.title,
+        firstSub.art,
+        firstSub.id || 394775318,
+        !state.currentEpisode
+      );
     };
   </script>
 </body>
