@@ -52,43 +52,41 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
 
-    /* Animated Waveform Equalizer Indicator */
-    @keyframes eq-bounce-1 { 0%, 100% { height: 3px; } 50% { height: 14px; } }
-    @keyframes eq-bounce-2 { 0%, 100% { height: 13px; } 35% { height: 4px; } 70% { height: 15px; } }
-    @keyframes eq-bounce-3 { 0%, 100% { height: 6px; } 45% { height: 15px; } 80% { height: 3px; } }
-    @keyframes eq-bounce-4 { 0%, 100% { height: 11px; } 25% { height: 15px; } 65% { height: 4px; } }
-
-    .eq-container {
+    /* Animated Equalizer / Waveform Indicator */
+    .eq-bars {
       display: inline-flex;
       align-items: flex-end;
       justify-content: center;
       gap: 2px;
+      height: 14px;
       width: 16px;
-      height: 15px;
-      flex-shrink: 0;
     }
     .eq-bar {
-      width: 2.5px;
+      width: 3px;
       background-color: #34d399;
       border-radius: 999px;
-      transition: height 0.2s ease, opacity 0.2s ease;
+      animation: eq-bounce 0.85s ease-in-out infinite;
+      transform-origin: bottom;
     }
-    .eq-playing .eq-bar:nth-child(1) { animation: eq-bounce-1 0.75s ease-in-out infinite; }
-    .eq-playing .eq-bar:nth-child(2) { animation: eq-bounce-2 0.65s ease-in-out infinite; }
-    .eq-playing .eq-bar:nth-child(3) { animation: eq-bounce-3 0.85s ease-in-out infinite; }
-    .eq-playing .eq-bar:nth-child(4) { animation: eq-bounce-4 0.7s ease-in-out infinite; }
+    .eq-bar:nth-child(1) { animation-delay: 0.0s; height: 45%; }
+    .eq-bar:nth-child(2) { animation-delay: 0.22s; height: 95%; }
+    .eq-bar:nth-child(3) { animation-delay: 0.45s; height: 60%; }
+    .eq-bar:nth-child(4) { animation-delay: 0.15s; height: 80%; }
 
     .eq-paused .eq-bar {
-      animation: none !important;
-      opacity: 0.55;
+      animation-play-state: paused;
+      height: 30% !important;
+      background-color: #fbbf24;
+      transition: height 0.2s ease;
     }
-    .eq-paused .eq-bar:nth-child(1) { height: 4px; }
-    .eq-paused .eq-bar:nth-child(2) { height: 8px; }
-    .eq-paused .eq-bar:nth-child(3) { height: 5px; }
-    .eq-paused .eq-bar:nth-child(4) { height: 3px; }
+
+    @keyframes eq-bounce {
+      0%, 100% { height: 22%; }
+      50% { height: 100%; }
+    }
   </style>
 </head>
-<body class="max-w-3xl mx-auto px-4 pt-3 pb-44 select-none min-h-screen flex flex-col">
+<body class="max-w-3xl mx-auto px-4 pt-2 pb-44 select-none min-h-screen flex flex-col">
 
   <!-- Toast Notification -->
   <div id="toast" class="fixed top-4 right-4 z-50 hidden bg-zinc-900 border border-zinc-700 text-zinc-100 px-3.5 py-2 rounded-lg shadow-2xl text-xs font-medium flex items-center gap-2 transition-all">
@@ -119,11 +117,11 @@
   </div>
 
   <!-- Minimal Header -->
-  <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 py-3 border-b minimal-border mb-6">
+  <header id="app-header" class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2.5 py-2.5 border-b minimal-border mb-4">
     <div class="flex items-center justify-between">
-      <div class="flex items-center gap-2.5">
-        <div class="w-2.5 h-2.5 rounded-full bg-white"></div>
-        <h1 class="text-base font-semibold tracking-tight text-white">mono.cast</h1>
+      <div class="flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-white"></div>
+        <h1 class="text-sm font-semibold tracking-tight text-white">mono.cast</h1>
       </div>
     </div>
 
@@ -168,7 +166,7 @@
     <div class="flex justify-between items-center">
       <div>
         <h2 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Up Next Queue</h2>
-        <p class="text-[11px] text-zinc-500 mt-0.5">Use the arrows to rearrange playback order.</p>
+        <p class="text-[11px] text-zinc-500 mt-0.5">Rearrange episodes with ↑ ↓ or tap any episode to play.</p>
       </div>
       <button onclick="clearQueue()" id="clear-queue-btn" class="text-xs text-zinc-500 hover:text-red-400 px-2.5 py-1 rounded border border-transparent hover:border-zinc-800 transition">Clear Queue</button>
     </div>
@@ -187,57 +185,55 @@
     <div id="bookmarks-list" class="space-y-2"></div>
   </section>
 
-  <!-- TAB 4: Dedicated Full Now Playing View -->
-  <section id="view-nowplaying" class="hidden flex-1 flex flex-col justify-center py-2">
-    <div class="max-w-md mx-auto w-full bg-zinc-900/50 border border-zinc-800/90 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col items-center text-center space-y-6">
+  <!-- TAB 4: Dedicated Full Now Playing View (Compact Above-the-Fold Layout) -->
+  <section id="view-nowplaying" class="hidden flex-1 flex flex-col justify-start pt-0.5">
+    <div class="max-w-md mx-auto w-full bg-zinc-900/50 border border-zinc-800/90 rounded-2xl p-4 sm:p-5 shadow-2xl flex flex-col items-center text-center space-y-3">
       
-      <!-- Large Album Artwork -->
-      <div class="w-64 h-64 sm:w-72 sm:h-72 rounded-2xl overflow-hidden shadow-2xl border border-zinc-800 bg-zinc-950 flex-shrink-0">
+      <!-- Slightly Smaller Album Artwork -->
+      <div class="w-44 h-44 sm:w-52 sm:h-52 rounded-xl overflow-hidden shadow-xl border border-zinc-800 bg-zinc-950 flex-shrink-0">
         <img id="np-art" src="" alt="Album Art" class="w-full h-full object-cover">
       </div>
 
       <!-- Track & Show Details -->
-      <div class="w-full space-y-1.5 px-2">
-        <div id="np-status" class="text-[11px] font-semibold uppercase tracking-widest text-amber-400 min-h-[1rem]"></div>
-        <h2 id="np-title" class="text-lg sm:text-xl font-bold text-white leading-snug line-clamp-2">Not Playing</h2>
-        <p id="np-podcast" class="text-xs sm:text-sm text-zinc-400 font-medium truncate">Select an episode to listen</p>
+      <div class="w-full space-y-0.5 px-1">
+        <div id="np-status" class="text-[10px] font-semibold uppercase tracking-widest text-amber-400 min-h-[0.85rem]"></div>
+        <h2 id="np-title" class="text-base sm:text-lg font-bold text-white leading-tight line-clamp-2">Not Playing</h2>
+        <p id="np-podcast" class="text-xs text-zinc-400 font-medium truncate">Select an episode to listen</p>
       </div>
 
       <!-- Scrubber & Timestamps -->
-      <div class="w-full space-y-2 pt-1">
+      <div class="w-full space-y-1">
         <input id="np-seek-bar" type="range" min="0" max="1000" value="0" class="w-full" oninput="seekAudio(this.value)">
-        <div class="flex justify-between text-xs font-mono-time text-zinc-400">
+        <div class="flex justify-between text-[11px] font-mono-time text-zinc-400">
           <span id="np-current-time">00:00</span>
           <span id="np-duration-time">00:00</span>
         </div>
       </div>
 
       <!-- Primary Playback Controls -->
-      <div class="flex items-center justify-center gap-5 w-full py-1">
-        <button onclick="skip(-15)" class="text-xs font-mono-time text-zinc-300 hover:text-white bg-zinc-800/80 hover:bg-zinc-800 border border-zinc-700/60 rounded-xl px-3.5 py-2.5 transition active:scale-95">-15s</button>
-        <button onclick="togglePlay()" id="np-play-btn" class="bg-white text-black rounded-full w-16 h-16 flex items-center justify-center text-sm font-bold shadow-xl hover:bg-zinc-200 transition active:scale-95">Play</button>
-        <button onclick="skip(30)" class="text-xs font-mono-time text-zinc-300 hover:text-white bg-zinc-800/80 hover:bg-zinc-800 border border-zinc-700/60 rounded-xl px-3.5 py-2.5 transition active:scale-95">+30s</button>
+      <div class="flex items-center justify-center gap-4 w-full">
+        <button onclick="skip(-15)" class="text-xs font-mono-time text-zinc-300 hover:text-white bg-zinc-800/80 hover:bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2 transition active:scale-95">-15s</button>
+        <button onclick="togglePlay()" id="np-play-btn" class="bg-white text-black rounded-full w-13 h-13 px-5 py-3.5 flex items-center justify-center text-xs font-bold shadow-lg hover:bg-zinc-200 transition active:scale-95 min-w-[68px]">Play</button>
+        <button onclick="skip(30)" class="text-xs font-mono-time text-zinc-300 hover:text-white bg-zinc-800/80 hover:bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2 transition active:scale-95">+30s</button>
       </div>
 
-      <!-- Playback Speed Selector Bar (Up to 3x) -->
-      <div class="w-full space-y-2 pt-1">
-        <div class="flex items-center justify-between px-1">
-          <span class="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Playback Speed</span>
-          <span id="np-speed-label" class="text-xs font-mono-time font-semibold text-white">1x</span>
+      <!-- Compact Playback Speed Selector (Up to 3x) -->
+      <div class="w-full pt-2 border-t border-zinc-800/80 space-y-1.5">
+        <div class="flex items-center justify-between px-0.5">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Speed</span>
+          <span id="np-speed-readout" class="text-[11px] font-mono-time text-emerald-400 font-medium">1x</span>
         </div>
-        <div id="np-speed-pills" class="grid grid-cols-8 gap-1 bg-zinc-950/90 p-1 rounded-xl border border-zinc-800/80">
-          <!-- Populated dynamically by renderSpeedControls() -->
-        </div>
+        <div id="np-speed-buttons" class="grid grid-cols-8 gap-1"></div>
       </div>
 
       <!-- Secondary Actions: Bookmark, Sleep Timer, Next in Queue -->
-      <div class="w-full pt-4 border-t border-zinc-800/80 flex items-center justify-between gap-2">
-        <button onclick="openBookmarkModal()" class="flex-1 bg-zinc-800/70 hover:bg-zinc-800 text-amber-300 border border-zinc-700/60 rounded-xl py-2.5 px-3 text-xs font-medium flex items-center justify-center gap-1.5 transition">
+      <div class="w-full pt-2 border-t border-zinc-800/80 flex items-center justify-between gap-1.5">
+        <button onclick="openBookmarkModal()" class="flex-1 bg-zinc-800/70 hover:bg-zinc-800 text-amber-300 border border-zinc-700/60 rounded-xl py-2 px-2.5 text-xs font-medium flex items-center justify-center gap-1 transition">
           <span>★</span>
           <span>Bookmark</span>
         </button>
 
-        <div class="flex-1 flex items-center justify-center bg-zinc-800/70 border border-zinc-700/60 rounded-xl py-2 px-2.5">
+        <div class="flex-1 flex items-center justify-center bg-zinc-800/70 border border-zinc-700/60 rounded-xl py-1.5 px-2">
           <select id="np-sleep-select" onchange="setSleepTimer(this.value)" class="bg-transparent text-zinc-200 text-xs font-medium focus:outline-none cursor-pointer w-full text-center">
             <option value="0" class="bg-zinc-900">🌙 Sleep: Off</option>
             <option value="5" class="bg-zinc-900">🌙 5 min</option>
@@ -248,12 +244,12 @@
           </select>
         </div>
 
-        <button onclick="playNextInQueue()" class="bg-zinc-800/70 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700/60 rounded-xl py-2.5 px-3.5 text-xs font-medium transition" title="Next in Queue">
+        <button onclick="playNextInQueue()" class="bg-zinc-800/70 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700/60 rounded-xl py-2 px-3 text-xs font-medium transition" title="Next in Queue">
           Next ⏭
         </button>
       </div>
 
-      <div id="np-sleep-countdown" class="hidden text-xs font-mono-time text-amber-300 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full"></div>
+      <div id="np-sleep-countdown" class="hidden text-[11px] font-mono-time text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded-full"></div>
     </div>
   </section>
 
@@ -282,17 +278,16 @@
         </div>
 
         <!-- Transport Controls -->
-        <div class="flex items-center gap-1.5">
+        <div class="flex items-center gap-1">
+          <button onclick="cyclePlaybackSpeed()" id="footer-speed-btn" class="text-[11px] font-mono-time text-emerald-400 hover:text-emerald-300 bg-zinc-900 border minimal-border px-2 py-1 rounded-lg transition" title="Playback Speed">1x</button>
           <button onclick="skip(-15)" class="text-xs font-mono-time text-zinc-400 hover:text-white px-2 py-1.5 rounded hover:bg-zinc-900 transition">-15s</button>
           <button onclick="togglePlay()" id="play-btn" class="bg-white text-black px-4 py-1.5 rounded-lg text-xs font-semibold hover:bg-zinc-200 transition min-w-[64px]">Play</button>
           <button onclick="skip(30)" class="text-xs font-mono-time text-zinc-400 hover:text-white px-2 py-1.5 rounded hover:bg-zinc-900 transition">+30s</button>
           <button onclick="playNextInQueue()" class="text-xs text-zinc-400 hover:text-white px-2 py-1.5 rounded hover:bg-zinc-900 transition" title="Play Next in Queue">⏭</button>
         </div>
 
-        <!-- Speed, Bookmark & Sleep Timer -->
+        <!-- Bookmark & Sleep Timer -->
         <div class="flex items-center gap-1.5">
-          <button onclick="cyclePlaybackSpeed()" id="footer-speed-btn" class="bg-zinc-900 border minimal-border text-zinc-300 hover:text-white hover:border-zinc-600 px-2 py-1.5 rounded-lg text-xs font-mono-time font-medium transition" title="Cycle Playback Speed">1x</button>
-
           <button onclick="openBookmarkModal()" class="bg-zinc-900 border minimal-border text-zinc-200 hover:text-white hover:border-zinc-600 px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition">
             <span class="text-amber-400">★</span>
             <span class="hidden sm:inline">Bookmark</span>
@@ -317,6 +312,8 @@
 
   <script>
     const FALLBACK_ART = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%2318181b'/%3E%3Ccircle cx='200' cy='200' r='90' stroke='%233f3f46' stroke-width='12' fill='none'/%3E%3Ccircle cx='200' cy='200' r='28' fill='%2371717a'/%3E%3C/svg%3E";
+
+    const SPEED_OPTIONS = [0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 
     const STARTER_PODCASTS = [
       {
@@ -347,24 +344,22 @@
       playlist: JSON.parse(localStorage.getItem('pod_playlist') || '[]'),
       bookmarks: JSON.parse(localStorage.getItem('pod_bookmarks') || '[]'),
       currentEpisode: JSON.parse(localStorage.getItem('pod_current') || 'null'),
-      playbackSpeed: parseFloat(localStorage.getItem('pod_speed') || '1') || 1,
+      playbackRate: parseFloat(localStorage.getItem('pod_speed') || '1') || 1,
       activeTab: 'discover'
     };
 
-    const SPEED_OPTIONS = [0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3];
-
-    // Active Podcast Feed Pagination, Sort & Archive State
-    let currentFeedState = {
+    // State for active podcast feed pagination, sorting, and full archive loading
+    let feedState = {
       collectionId: 0,
       feedUrl: '',
       podTitle: '',
-      art: '',
-      episodes: [],
+      art: FALLBACK_ART,
+      allEpisodes: [],
       visibleCount: 30,
       sortBy: 'newest',
       filterQuery: '',
-      fullRssLoaded: false,
-      loadingRss: false
+      archiveLoaded: false,
+      loadingArchive: false
     };
 
     const audio = document.getElementById('audio-player');
@@ -375,6 +370,28 @@
     function getHiResArt(url) {
       if (!url) return FALLBACK_ART;
       return url.replace('100x100bb', '600x600bb');
+    }
+
+    function isSameEpisode(a, b) {
+      if (!a || !b) return false;
+      if (a.audioUrl && b.audioUrl) {
+        const cleanA = String(a.audioUrl).replace(/^http:\/\//i, 'https://');
+        const cleanB = String(b.audioUrl).replace(/^http:\/\//i, 'https://');
+        if (cleanA === cleanB) return true;
+      }
+      return a.title === b.title && a.podcast === b.podcast;
+    }
+
+    function getWaveformHtml() {
+      const pausedClass = audio.paused ? 'eq-paused' : '';
+      return `
+        <div class="eq-bars ${pausedClass}" title="${audio.paused ? 'Paused' : 'Now Playing'}">
+          <span class="eq-bar"></span>
+          <span class="eq-bar"></span>
+          <span class="eq-bar"></span>
+          <span class="eq-bar"></span>
+        </div>
+      `;
     }
 
     function showToast(msg, color = 'bg-emerald-400') {
@@ -394,91 +411,58 @@
       if (s2) s2.textContent = text || '';
     }
 
-    function normalizeAudioUrl(url) {
-      return String(url || '').trim().replace(/^http:\/\//i, 'https://');
-    }
-
-    function isSameEpisode(epA, epB) {
-      if (!epA || !epB) return false;
-      const urlA = normalizeAudioUrl(epA.audioUrl);
-      const urlB = normalizeAudioUrl(epB.audioUrl);
-      if (urlA && urlB) return urlA === urlB;
-      return epA.title === epB.title && epA.podcast === epB.podcast;
-    }
-
-    function getWaveformHtml(isPlaying) {
-      const stateClass = isPlaying ? 'eq-playing' : 'eq-paused';
-      return `
-        <span class="eq-container ${stateClass}" title="${isPlaying ? 'Now Playing' : 'Paused'}">
-          <span class="eq-bar"></span>
-          <span class="eq-bar"></span>
-          <span class="eq-bar"></span>
-          <span class="eq-bar"></span>
-        </span>
-      `;
-    }
-
-    function refreshPlayingIndicators() {
-      renderPlaylist();
-      if (document.getElementById('episodes-list-container')) {
-        renderEpisodesListOnly();
-      }
-    }
-
-    // --- PLAYBACK SPEED CONTROLS (UP TO 3X) ---
-    function setPlaybackSpeed(rate, notify = true) {
-      const parsed = parseFloat(rate);
-      if (isNaN(parsed) || parsed <= 0) return;
-      state.playbackSpeed = parsed;
-      localStorage.setItem('pod_speed', String(parsed));
-      audio.playbackRate = parsed;
-      audio.defaultPlaybackRate = parsed;
-      renderSpeedControls();
-      if (notify) {
-        showToast(`Playback speed: ${parsed}x`, 'bg-white');
-      }
-    }
-
-    function cyclePlaybackSpeed() {
-      const idx = SPEED_OPTIONS.findIndex(s => Math.abs(s - state.playbackSpeed) < 0.01);
-      const nextIdx = (idx + 1) % SPEED_OPTIONS.length;
-      setPlaybackSpeed(SPEED_OPTIONS[nextIdx], true);
-    }
-
-    function renderSpeedControls() {
-      const label = `${state.playbackSpeed}x`;
-      const npLabel = document.getElementById('np-speed-label');
-      const footerBtn = document.getElementById('footer-speed-btn');
-      const pillsContainer = document.getElementById('np-speed-pills');
-
-      if (npLabel) npLabel.textContent = label;
-      if (footerBtn) footerBtn.textContent = label;
-
-      if (pillsContainer) {
-        pillsContainer.innerHTML = SPEED_OPTIONS.map(s => {
-          const active = Math.abs(s - state.playbackSpeed) < 0.01;
-          return `
-            <button onclick="setPlaybackSpeed(${s})" 
-              class="py-1.5 rounded-lg text-[11px] font-mono-time font-medium transition ${
-                active
-                  ? 'bg-white text-black font-semibold shadow'
-                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
-              }">
-              ${s}x
-            </button>
-          `;
-        }).join('');
-      }
-    }
-
     function saveState() {
       localStorage.setItem('pod_subs', JSON.stringify(state.subscriptions));
       localStorage.setItem('pod_playlist', JSON.stringify(state.playlist));
       localStorage.setItem('pod_bookmarks', JSON.stringify(state.bookmarks));
       localStorage.setItem('pod_current', JSON.stringify(state.currentEpisode));
+      localStorage.setItem('pod_speed', String(state.playbackRate));
       renderSubscriptions();
       renderPlaylist();
       renderBookmarks();
+      renderSpeedControls();
+    }
+
+    // --- PLAYBACK SPEED CONTROLS (UP TO 3X) ---
+    function setPlaybackSpeed(rate) {
+      const cleanRate = parseFloat(rate) || 1;
+      state.playbackRate = cleanRate;
+      audio.playbackRate = cleanRate;
+      audio.defaultPlaybackRate = cleanRate;
+      localStorage.setItem('pod_speed', String(cleanRate));
+      renderSpeedControls();
+    }
+
+    function cyclePlaybackSpeed() {
+      const idx = SPEED_OPTIONS.findIndex(s => Math.abs(s - state.playbackRate) < 0.01);
+      const nextRate = SPEED_OPTIONS[(idx + 1) % SPEED_OPTIONS.length];
+      setPlaybackSpeed(nextRate);
+      showToast(`Playback speed: ${nextRate}x`);
+    }
+
+    function renderSpeedControls() {
+      const label = `${state.playbackRate}x`;
+      const readout = document.getElementById('np-speed-readout');
+      const footerBtn = document.getElementById('footer-speed-btn');
+      const container = document.getElementById('np-speed-buttons');
+
+      if (readout) readout.textContent = label;
+      if (footerBtn) footerBtn.textContent = label;
+      if (!container) return;
+
+      container.innerHTML = SPEED_OPTIONS.map(spd => {
+        const active = Math.abs(state.playbackRate - spd) < 0.01;
+        return `
+          <button onclick="setPlaybackSpeed(${spd})" 
+            class="py-1 px-0.5 rounded-lg text-[10px] font-mono-time font-medium border transition ${
+              active 
+                ? 'bg-white text-black border-white font-bold shadow-sm' 
+                : 'bg-zinc-900/90 text-zinc-400 border-zinc-800 hover:text-white hover:border-zinc-700'
+            }">
+            ${spd}x
+          </button>
+        `;
+      }).join('');
     }
 
     function switchTab(tab) {
@@ -494,14 +478,17 @@
       });
 
       const footer = document.getElementById('footer-player');
+      const header = document.getElementById('app-header');
       if (tab === 'nowplaying') {
         footer.classList.add('hidden');
+        header.classList.replace('mb-4', 'mb-2');
         document.body.classList.remove('pb-44');
-        document.body.classList.add('pb-8');
+        document.body.classList.add('pb-3');
       } else {
         footer.classList.remove('hidden');
+        header.classList.replace('mb-2', 'mb-4');
         document.body.classList.add('pb-44');
-        document.body.classList.remove('pb-8');
+        document.body.classList.remove('pb-3');
       }
     }
 
@@ -571,7 +558,7 @@
     }
 
     function toggleSub(id, title, artist, feedUrl, art) {
-      const idx = state.subscriptions.findIndex(s => Number(s.id) === Number(id) || (feedUrl && s.feedUrl === feedUrl));
+      const idx = state.subscriptions.findIndex(s => Number(s.id) === Number(id));
       if (idx > -1) {
         state.subscriptions.splice(idx, 1);
         showToast(`Unsubscribed from ${title}`, 'bg-zinc-400');
@@ -581,11 +568,8 @@
       }
       saveState();
       const q = document.getElementById('search-input').value.trim();
-      if (q) {
-        searchPodcasts();
-      } else if (currentFeedState.podTitle === title) {
-        renderActiveFeedView();
-      }
+      if (q) searchPodcasts();
+      else if (feedState.podTitle === title) renderActiveFeedView();
     }
 
     function renderSubscriptions() {
@@ -605,117 +589,58 @@
       `).join('');
     }
 
-    // Parse duration tags like "01:42:15", "45:10", or "2710" into seconds
     function parseDurationToSeconds(raw) {
       if (!raw) return 0;
       const str = String(raw).trim();
       if (/^\d+$/.test(str)) return parseInt(str, 10);
       const parts = str.split(':').map(Number);
-      if (parts.some(isNaN)) return 0;
-      if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
-      if (parts.length === 2) return parts[0] * 60 + parts[1];
+      if (parts.length === 3) return (parts[0] * 3600) + (parts[1] * 60) + (parts[2] || 0);
+      if (parts.length === 2) return (parts[0] * 60) + (parts[1] || 0);
       return 0;
     }
 
-    // Parse full RSS XML into structured episode objects
-    function parseRssXmlItems(xmlText, fallbackArt) {
-      try {
-        const xml = new DOMParser().parseFromString(xmlText, "text/xml");
-        const items = Array.from(xml.querySelectorAll("item"));
-        return items.map(item => {
-          const epTitle = item.querySelector("title")?.textContent?.trim() || "Untitled Episode";
-          const enclosure = item.querySelector("enclosure");
-          const rawUrl = enclosure ? (enclosure.getAttribute("url") || "") : "";
-          const audioUrl = String(rawUrl).trim().replace(/^http:\/\//i, 'https://');
-          const pubDateStr = item.querySelector("pubDate")?.textContent?.trim() || "";
-          const timestamp = pubDateStr ? (Date.parse(pubDateStr) || 0) : 0;
-          const pubDateFormatted = timestamp
-            ? new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-            : '';
-
-          let durNode = item.getElementsByTagName("itunes:duration")[0] || item.querySelector("duration");
-          const durRaw = durNode ? durNode.textContent.trim() : "";
-          const durationSec = parseDurationToSeconds(durRaw);
-
-          let epArt = fallbackArt;
-          const itunesImg = item.getElementsByTagName("itunes:image")[0];
-          if (itunesImg && itunesImg.getAttribute("href")) {
-            epArt = getHiResArt(itunesImg.getAttribute("href"));
-          }
-
-          return {
-            title: epTitle,
-            audioUrl,
-            pubDate: pubDateFormatted,
-            timestamp,
-            durationSec,
-            duration: durationSec > 0 ? formatTime(durationSec) : '',
-            art: epArt
-          };
-        }).filter(ep => ep.audioUrl);
-      } catch (e) {
-        return [];
-      }
-    }
-
-    // Merge newly fetched RSS episodes with existing list without duplicates
-    function mergeEpisodeLists(primaryList, secondaryList) {
-      const map = new Map();
-      const normalizeKey = (ep) => {
-        const cleanUrl = (ep.audioUrl || '').split('?')[0].toLowerCase();
-        return cleanUrl || (ep.title || '').toLowerCase().trim();
-      };
-      primaryList.forEach(ep => map.set(normalizeKey(ep), ep));
-      secondaryList.forEach(ep => {
-        const key = normalizeKey(ep);
-        if (!map.has(key)) {
-          map.set(key, ep);
-        } else {
-          const existing = map.get(key);
-          if (!existing.durationSec && ep.durationSec) {
-            existing.durationSec = ep.durationSec;
-            existing.duration = ep.duration;
-          }
-          if (!existing.timestamp && ep.timestamp) {
-            existing.timestamp = ep.timestamp;
-            existing.pubDate = ep.pubDate;
-          }
-        }
-      });
-      return Array.from(map.values());
-    }
-
-    // Fetch up to 200 episodes via iTunes Lookup API + deep RSS archive support
+    // --- FEED LOADING WITH DEEP ARCHIVE + SORT + LOAD 30 MORE ---
     async function loadFeed(collectionId, feedUrl, podTitle, art) {
       const hiResArt = getHiResArt(art);
       const area = document.getElementById('results-area');
       area.innerHTML = `<div class="text-xs text-zinc-400 py-8 text-center animate-pulse">Loading episodes for <span class="text-white font-medium">${escapeHtml(podTitle)}</span>...</div>`;
 
-      let episodes = [];
-      let resolvedFeedUrl = feedUrl || '';
-      let resolvedId = Number(collectionId) || 0;
+      feedState = {
+        collectionId: Number(collectionId) || 0,
+        feedUrl: feedUrl || '',
+        podTitle: podTitle || 'Podcast',
+        art: hiResArt,
+        allEpisodes: [],
+        visibleCount: 30,
+        sortBy: 'newest',
+        filterQuery: '',
+        archiveLoaded: false,
+        loadingArchive: false
+      };
 
-      // 1. Official Apple iTunes Episode Lookup API (Up to 200 episodes immediately)
-      if (resolvedId > 0) {
+      let episodes = [];
+
+      // 1. Pull up to 200 episodes immediately from Apple iTunes Lookup API
+      if (feedState.collectionId > 0) {
         try {
-          const res = await fetch(`https://itunes.apple.com/lookup?id=${resolvedId}&media=podcast&entity=podcastEpisode&limit=200`);
+          const res = await fetch(`https://itunes.apple.com/lookup?id=${feedState.collectionId}&media=podcast&entity=podcastEpisode&limit=200`);
           if (res.ok) {
             const data = await res.json();
-            const collectionInfo = (data.results || []).find(r => r.wrapperType === 'track' || r.kind === 'podcast');
-            if (collectionInfo && collectionInfo.feedUrl && !resolvedFeedUrl) {
-              resolvedFeedUrl = collectionInfo.feedUrl;
+            const channelInfo = (data.results || []).find(r => r.wrapperType === 'track' && r.feedUrl);
+            if (channelInfo && !feedState.feedUrl) {
+              feedState.feedUrl = channelInfo.feedUrl;
             }
             const rawEpisodes = (data.results || []).filter(r => r.wrapperType === 'podcastEpisode' && r.episodeUrl);
             episodes = rawEpisodes.map(ep => {
-              const ts = ep.releaseDate ? (Date.parse(ep.releaseDate) || 0) : 0;
+              const ts = ep.releaseDate ? new Date(ep.releaseDate).getTime() : 0;
               const durSec = ep.trackTimeMillis ? Math.floor(ep.trackTimeMillis / 1000) : 0;
               return {
                 title: ep.trackName || 'Untitled Episode',
                 audioUrl: String(ep.episodeUrl).replace(/^http:\/\//i, 'https://'),
-                pubDate: ts ? new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '',
-                timestamp: ts,
+                pubDate: ep.releaseDate ? new Date(ep.releaseDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+                timestamp: isNaN(ts) ? 0 : ts,
                 durationSec: durSec,
-                duration: durSec > 0 ? formatTime(durSec) : '',
+                duration: durSec ? formatTime(durSec) : '',
                 art: getHiResArt(ep.artworkUrl600 || ep.artworkUrl160 || hiResArt)
               };
             });
@@ -723,11 +648,29 @@
         } catch (err) {}
       }
 
-      // 2. Fallback if iTunes Lookup returned 0 episodes: Fetch directly from RSS / CORS proxies
-      let rssLoadedDuringInit = false;
-      if (episodes.length === 0 && resolvedFeedUrl) {
-        episodes = await fetchDeepRssArchive(resolvedFeedUrl, hiResArt);
-        rssLoadedDuringInit = episodes.length > 0;
+      // 2. Fallback to RSS2JSON if iTunes Lookup returned nothing
+      if (episodes.length === 0 && feedState.feedUrl) {
+        try {
+          const r1 = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedState.feedUrl)}`);
+          if (r1.ok) {
+            const d1 = await r1.json();
+            if (d1.status === 'ok' && d1.items) {
+              episodes = d1.items.map(item => {
+                const ts = item.pubDate ? new Date(item.pubDate).getTime() : 0;
+                const durSec = parseDurationToSeconds(item.enclosure?.duration);
+                return {
+                  title: item.title || 'Untitled Episode',
+                  audioUrl: String(item.enclosure?.link || item.link || '').replace(/^http:\/\//i, 'https://'),
+                  pubDate: item.pubDate ? item.pubDate.split(' ')[0] : '',
+                  timestamp: isNaN(ts) ? 0 : ts,
+                  durationSec: durSec,
+                  duration: durSec ? formatTime(durSec) : '',
+                  art: hiResArt
+                };
+              }).filter(ep => ep.audioUrl);
+            }
+          }
+        } catch (err) {}
       }
 
       if (episodes.length === 0) {
@@ -738,18 +681,7 @@
         return;
       }
 
-      currentFeedState = {
-        collectionId: resolvedId,
-        feedUrl: resolvedFeedUrl,
-        podTitle,
-        art: hiResArt,
-        episodes,
-        visibleCount: 30,
-        sortBy: 'newest',
-        filterQuery: '',
-        fullRssLoaded: rssLoadedDuringInit,
-        loadingRss: false
-      };
+      feedState.allEpisodes = episodes;
 
       if (!state.currentEpisode && episodes[0]) {
         state.currentEpisode = {
@@ -764,252 +696,250 @@
 
       renderActiveFeedView();
 
-      // If iTunes hit its 200-episode cap and we have an RSS feedUrl, automatically supplement the full archive in the background
-      if (episodes.length >= 200 && resolvedFeedUrl && !rssLoadedDuringInit) {
-        unlockFullRssArchive(true);
+      if (feedState.feedUrl && episodes.length >= 195) {
+        fetchFullRssArchive();
       }
     }
 
-    async function fetchDeepRssArchive(feedUrl, fallbackArt) {
-      if (!feedUrl) return [];
-      // Try direct fetch first, then CORS-friendly raw XML proxies for large back-catalogs
-      const sources = [
-        feedUrl,
-        `https://corsproxy.io/?${encodeURIComponent(feedUrl)}`,
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`,
-        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(feedUrl)}`
+    async function fetchFullRssArchive() {
+      if (!feedState.feedUrl || feedState.loadingArchive || feedState.archiveLoaded) return;
+      feedState.loadingArchive = true;
+      updateFeedHeaderStatus();
+
+      let xmlText = '';
+      const proxies = [
+        url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+        url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
       ];
-      for (const src of sources) {
+
+      for (const buildUrl of proxies) {
         try {
-          const res = await fetch(src);
+          const res = await fetch(buildUrl(feedState.feedUrl));
           if (res.ok) {
             const text = await res.text();
-            const parsed = parseRssXmlItems(text, fallbackArt);
-            if (parsed.length > 0) return parsed;
+            if (text && text.includes('<item')) {
+              xmlText = text;
+              break;
+            }
           }
-        } catch (err) {}
+        } catch (e) {}
       }
-      // Last fallback: rss2json
-      try {
-        const r1 = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`);
-        if (r1.ok) {
-          const d1 = await r1.json();
-          if (d1.status === 'ok' && d1.items) {
-            return d1.items.map(item => {
-              const ts = item.pubDate ? (Date.parse(item.pubDate) || 0) : 0;
-              const durSec = parseDurationToSeconds(item.enclosure?.duration);
-              return {
-                title: item.title || 'Untitled Episode',
-                audioUrl: String(item.enclosure?.link || item.link || '').replace(/^http:\/\//i, 'https://'),
-                pubDate: ts ? new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '',
-                timestamp: ts,
-                durationSec: durSec,
-                duration: durSec > 0 ? formatTime(durSec) : '',
-                art: fallbackArt
-              };
-            }).filter(ep => ep.audioUrl);
+
+      if (xmlText) {
+        try {
+          const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
+          const items = Array.from(doc.querySelectorAll('item'));
+          const existingUrls = new Set(feedState.allEpisodes.map(e => e.audioUrl));
+          const existingTitles = new Set(feedState.allEpisodes.map(e => e.title.toLowerCase()));
+          let addedCount = 0;
+
+          items.forEach(item => {
+            const enclosure = item.querySelector('enclosure');
+            const rawUrl = enclosure ? enclosure.getAttribute('url') : '';
+            if (!rawUrl) return;
+            const cleanUrl = String(rawUrl).replace(/^http:\/\//i, 'https://');
+            const title = (item.querySelector('title')?.textContent || 'Untitled Episode').trim();
+            if (existingUrls.has(cleanUrl) || existingTitles.has(title.toLowerCase())) return;
+
+            const pubDateRaw = item.querySelector('pubDate')?.textContent || '';
+            const ts = pubDateRaw ? new Date(pubDateRaw).getTime() : 0;
+            const durTag = item.getElementsByTagName('itunes:duration')[0] || item.querySelector('duration');
+            const durSec = parseDurationToSeconds(durTag ? durTag.textContent : '');
+
+            feedState.allEpisodes.push({
+              title,
+              audioUrl: cleanUrl,
+              pubDate: !isNaN(ts) && ts > 0 ? new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+              timestamp: isNaN(ts) ? 0 : ts,
+              durationSec: durSec,
+              duration: durSec ? formatTime(durSec) : '',
+              art: feedState.art
+            });
+            existingUrls.add(cleanUrl);
+            existingTitles.add(title.toLowerCase());
+            addedCount++;
+          });
+
+          feedState.archiveLoaded = true;
+          if (addedCount > 0) {
+            showToast(`Loaded ${addedCount} older archive episodes`);
           }
-        }
-      } catch (err) {}
-      return [];
+        } catch (e) {}
+      }
+
+      feedState.loadingArchive = false;
+      renderEpisodesSliceOnly();
     }
 
-    async function unlockFullRssArchive(silent = false) {
-      if (!currentFeedState.feedUrl || currentFeedState.loadingRss || currentFeedState.fullRssLoaded) return;
-      currentFeedState.loadingRss = true;
-      if (!silent) renderActiveFeedView();
-
-      const rssEpisodes = await fetchDeepRssArchive(currentFeedState.feedUrl, currentFeedState.art);
-      currentFeedState.loadingRss = false;
-      currentFeedState.fullRssLoaded = true;
-
-      if (rssEpisodes.length > 0) {
-        const prevCount = currentFeedState.episodes.length;
-        currentFeedState.episodes = mergeEpisodeLists(currentFeedState.episodes, rssEpisodes);
-        const added = currentFeedState.episodes.length - prevCount;
-        if (added > 0 && !silent) {
-          showToast(`Loaded ${added} older archive episodes`);
-        }
-      }
-      renderActiveFeedView();
+    function updateFeedHeaderStatus() {
+      const subEl = document.getElementById('feed-episode-count');
+      if (!subEl) return;
+      const total = feedState.allEpisodes.length;
+      subEl.textContent = feedState.loadingArchive 
+        ? `${total} episodes loaded (fetching full archive...)`
+        : `${total} episodes available`;
     }
 
     function getSortedAndFilteredEpisodes() {
-      const q = (currentFeedState.filterQuery || '').trim().toLowerCase();
-      let list = currentFeedState.episodes.slice();
+      const q = (feedState.filterQuery || '').trim().toLowerCase();
+      let list = feedState.allEpisodes.filter(ep => !q || ep.title.toLowerCase().includes(q));
 
-      if (q) {
-        list = list.filter(ep => (ep.title || '').toLowerCase().includes(q) || (ep.pubDate || '').toLowerCase().includes(q));
-      }
-
-      const sortMode = currentFeedState.sortBy || 'newest';
       list.sort((a, b) => {
-        if (sortMode === 'newest') return (b.timestamp || 0) - (a.timestamp || 0);
-        if (sortMode === 'oldest') return (a.timestamp || 0) - (b.timestamp || 0);
-        if (sortMode === 'longest') return (b.durationSec || 0) - (a.durationSec || 0);
-        if (sortMode === 'shortest') {
-          const da = a.durationSec || Number.MAX_SAFE_INTEGER;
-          const db = b.durationSec || Number.MAX_SAFE_INTEGER;
-          return da - db;
+        switch (feedState.sortBy) {
+          case 'oldest':
+            return (a.timestamp || 0) - (b.timestamp || 0);
+          case 'longest':
+            return (b.durationSec || 0) - (a.durationSec || 0);
+          case 'shortest':
+            return (a.durationSec || 999999) - (b.durationSec || 999999);
+          case 'title_asc':
+            return a.title.localeCompare(b.title);
+          case 'newest':
+          default:
+            return (b.timestamp || 0) - (a.timestamp || 0);
         }
-        if (sortMode === 'title') return (a.title || '').localeCompare(b.title || '');
-        return 0;
       });
 
       return list;
     }
 
     function changeFeedSort(newSort) {
-      currentFeedState.sortBy = newSort;
-      currentFeedState.visibleCount = 30;
-      renderEpisodesListOnly();
+      feedState.sortBy = newSort;
+      feedState.visibleCount = 30;
+      if (newSort === 'oldest' && !feedState.archiveLoaded && !feedState.loadingArchive) {
+        fetchFullRssArchive();
+      }
+      renderEpisodesSliceOnly();
     }
 
-    function handleEpisodeFilterInput(val) {
-      currentFeedState.filterQuery = val;
-      currentFeedState.visibleCount = 30;
-      renderEpisodesListOnly();
+    function changeFeedFilter(val) {
+      feedState.filterQuery = val;
+      feedState.visibleCount = 30;
+      renderEpisodesSliceOnly();
     }
 
     function loadMoreEpisodes() {
-      currentFeedState.visibleCount += 30;
-      renderEpisodesListOnly();
-      // If user is nearing the 200-episode boundary and full RSS isn't loaded yet, fetch it
-      if (currentFeedState.visibleCount >= currentFeedState.episodes.length - 30 && currentFeedState.feedUrl && !currentFeedState.fullRssLoaded) {
-        unlockFullRssArchive(false);
+      feedState.visibleCount += 30;
+      renderEpisodesSliceOnly();
+      if (feedState.visibleCount >= feedState.allEpisodes.length - 30 && !feedState.archiveLoaded && !feedState.loadingArchive) {
+        fetchFullRssArchive();
       }
     }
 
     function renderActiveFeedView() {
       const area = document.getElementById('results-area');
-      const { collectionId, feedUrl, podTitle, art } = currentFeedState;
-      const isSub = state.subscriptions.some(s => Number(s.id) === Number(collectionId) || (feedUrl && s.feedUrl === feedUrl));
+      const isSub = state.subscriptions.some(
+        s => Number(s.id) === Number(feedState.collectionId) || (feedState.feedUrl && s.feedUrl === feedState.feedUrl)
+      );
 
       area.innerHTML = `
-        <!-- Podcast Show Banner -->
         <div class="p-3.5 border minimal-border rounded-2xl bg-zinc-900/70 space-y-3">
-          <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-3 min-w-0">
-              <img src="${art}" onerror="this.src=FALLBACK_ART" class="w-12 h-12 rounded-xl object-cover border border-zinc-700 flex-shrink-0">
+              <img src="${feedState.art}" onerror="this.src=FALLBACK_ART" class="w-12 h-12 rounded-xl object-cover border border-zinc-700 flex-shrink-0">
               <div class="min-w-0">
-                <h3 class="text-sm font-semibold text-white truncate">${escapeHtml(podTitle)}</h3>
-                <p id="feed-total-count" class="text-[11px] text-zinc-400">${currentFeedState.episodes.length} episodes in archive</p>
+                <h3 class="text-sm font-semibold text-white truncate">${escapeHtml(feedState.podTitle)}</h3>
+                <p id="feed-episode-count" class="text-[11px] text-zinc-400">${feedState.allEpisodes.length} episodes available</p>
               </div>
             </div>
-            <button onclick="toggleSub(${collectionId || Date.now()}, '${escapeAttr(podTitle)}', '', '${escapeAttr(feedUrl)}', '${escapeAttr(art)}')" 
-              class="text-xs px-3 py-1.5 rounded-lg border font-medium transition flex-shrink-0 ${isSub ? 'border-zinc-700 text-zinc-400 hover:text-red-400' : 'border-white bg-white text-black hover:bg-zinc-200'}">
+            <button onclick="toggleSub(${feedState.collectionId || Date.now()}, '${escapeAttr(feedState.podTitle)}', '', '${escapeAttr(feedState.feedUrl)}', '${escapeAttr(feedState.art)}')" 
+              class="text-xs px-3 py-1.5 rounded-lg border font-medium transition flex-shrink-0 ${isSub ? 'border-zinc-700 text-zinc-400' : 'border-white bg-white text-black'}">
               ${isSub ? 'Subscribed' : '+ Subscribe'}
             </button>
           </div>
 
-          <!-- Sort & In-Feed Episode Filter Controls -->
-          <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-zinc-800/80">
-            <div class="relative flex-1">
-              <input id="ep-filter-input" type="text" value="${escapeHtml(currentFeedState.filterQuery)}"
-                placeholder="Filter episodes by title or number..."
-                oninput="handleEpisodeFilterInput(this.value)"
-                class="w-full bg-zinc-950/90 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-600">
-            </div>
-            <div class="flex items-center gap-2">
-              <label for="ep-sort-select" class="text-[11px] text-zinc-400 whitespace-nowrap">Sort:</label>
-              <select id="ep-sort-select" onchange="changeFeedSort(this.value)"
-                class="bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-zinc-600 cursor-pointer flex-1 sm:flex-initial">
-                <option value="newest" ${currentFeedState.sortBy === 'newest' ? 'selected' : ''}>Newest First</option>
-                <option value="oldest" ${currentFeedState.sortBy === 'oldest' ? 'selected' : ''}>Oldest First</option>
-                <option value="longest" ${currentFeedState.sortBy === 'longest' ? 'selected' : ''}>Longest First</option>
-                <option value="shortest" ${currentFeedState.sortBy === 'shortest' ? 'selected' : ''}>Shortest First</option>
-                <option value="title" ${currentFeedState.sortBy === 'title' ? 'selected' : ''}>Title (A–Z)</option>
+          <!-- Filter & Sort Bar -->
+          <div class="flex flex-col sm:flex-row gap-2 pt-1 border-t border-zinc-800/80">
+            <input type="text" placeholder="Filter episodes in this show..." value="${escapeAttr(feedState.filterQuery)}"
+              oninput="changeFeedFilter(this.value)"
+              class="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-600">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[11px] text-zinc-500 whitespace-nowrap">Sort:</span>
+              <select onchange="changeFeedSort(this.value)" class="bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none cursor-pointer w-full sm:w-auto">
+                <option value="newest" ${feedState.sortBy === 'newest' ? 'selected' : ''}>Newest First</option>
+                <option value="oldest" ${feedState.sortBy === 'oldest' ? 'selected' : ''}>Oldest First</option>
+                <option value="longest" ${feedState.sortBy === 'longest' ? 'selected' : ''}>Longest First</option>
+                <option value="shortest" ${feedState.sortBy === 'shortest' ? 'selected' : ''}>Shortest First</option>
+                <option value="title_asc" ${feedState.sortBy === 'title_asc' ? 'selected' : ''}>Title (A–Z)</option>
               </select>
             </div>
           </div>
         </div>
 
-        <!-- Episodes List Container -->
-        <div id="episodes-list-container" class="space-y-2"></div>
+        <div id="feed-episodes-list" class="space-y-2"></div>
       `;
 
-      renderEpisodesListOnly();
+      renderEpisodesSliceOnly();
     }
 
-    function renderEpisodesListOnly() {
-      const container = document.getElementById('episodes-list-container');
-      const countEl = document.getElementById('feed-total-count');
-      if (!container) return;
+    function renderEpisodesSliceOnly() {
+      updateFeedHeaderStatus();
+      const listEl = document.getElementById('feed-episodes-list');
+      if (!listEl) return;
 
       const sorted = getSortedAndFilteredEpisodes();
-      const total = sorted.length;
-      const visible = sorted.slice(0, currentFeedState.visibleCount);
+      const visible = sorted.slice(0, feedState.visibleCount);
 
-      if (countEl) {
-        const archiveNote = currentFeedState.loadingRss ? ' · Syncing full archive...' : '';
-        countEl.textContent = `${currentFeedState.episodes.length} episodes available${archiveNote}`;
-      }
-
-      if (total === 0) {
-        container.innerHTML = `<div class="p-6 text-center text-xs text-zinc-500 border border-dashed border-zinc-800 rounded-xl">No episodes match "${escapeHtml(currentFeedState.filterQuery)}".</div>`;
+      if (visible.length === 0) {
+        listEl.innerHTML = `<div class="text-xs text-zinc-500 py-6 text-center">No episodes match your filter.</div>`;
         return;
       }
 
-      const { podTitle, art } = currentFeedState;
-      const isAudioPlaying = !audio.paused && !audio.ended && Boolean(audio.src);
-
-      const rowsHtml = visible.map(ep => {
-        const epObj = {
+      const itemsHtml = visible.map(ep => {
+        const epObjRaw = {
           title: ep.title,
-          podcast: podTitle,
+          podcast: feedState.podTitle,
           audioUrl: ep.audioUrl,
-          art: ep.art || art
+          art: ep.art || feedState.art
         };
-        const epPayload = encodeURIComponent(JSON.stringify(epObj));
-        const isCurrent = isSameEpisode(state.currentEpisode, epObj);
-        const metaLine = [ep.pubDate, ep.duration].filter(Boolean).join(' · ') || podTitle;
+        const isCurrent = isSameEpisode(state.currentEpisode, epObjRaw);
+        const epPayload = encodeURIComponent(JSON.stringify(epObjRaw));
+        const metaLine = [ep.pubDate, ep.duration].filter(Boolean).join(' · ') || feedState.podTitle;
         return `
-          <div class="flex items-center justify-between p-3 border rounded-xl transition ${isCurrent ? 'border-emerald-500/40 bg-emerald-950/15' : 'minimal-border bg-zinc-900/25 hover:bg-zinc-900/60'}">
+          <div class="flex items-center justify-between p-3 border ${isCurrent ? 'border-emerald-500/40 bg-emerald-950/15' : 'minimal-border bg-zinc-900/25 hover:bg-zinc-900/60'} rounded-xl transition">
             <div class="min-w-0 pr-3 flex-1 cursor-pointer" onclick="playEpisode('${epPayload}')">
               <div class="flex items-center gap-2">
-                ${isCurrent ? getWaveformHtml(isAudioPlaying) : ''}
+                ${isCurrent ? getWaveformHtml() : ''}
                 <div class="text-xs font-medium ${isCurrent ? 'text-emerald-300' : 'text-zinc-100'} truncate">${escapeHtml(ep.title)}</div>
               </div>
               <div class="text-[11px] text-zinc-500 mt-0.5">${escapeHtml(metaLine)}</div>
             </div>
             <div class="flex items-center gap-1.5 flex-shrink-0">
-              <button onclick="${isCurrent ? 'togglePlay()' : `playEpisode('${epPayload}')`}" class="${isCurrent ? 'bg-emerald-400 text-black hover:bg-emerald-300' : 'bg-white text-black hover:bg-zinc-200'} px-3 py-1.5 rounded-lg text-xs font-semibold transition">
-                ${isCurrent ? (isAudioPlaying ? 'Pause' : 'Resume') : 'Play'}
-              </button>
+              <button onclick="playEpisode('${epPayload}')" class="${isCurrent ? 'bg-emerald-400 text-black' : 'bg-white text-black hover:bg-zinc-200'} px-3 py-1.5 rounded-lg text-xs font-semibold transition">${isCurrent && !audio.paused ? 'Playing' : 'Play'}</button>
               <button onclick="addToQueue('${epPayload}')" class="bg-zinc-900 border minimal-border text-zinc-300 hover:text-white hover:border-zinc-600 px-2.5 py-1.5 rounded-lg text-xs transition">+ Queue</button>
             </div>
           </div>
         `;
       }).join('');
 
-      let footerActionHtml = '';
-      if (visible.length < total) {
-        const remaining = total - visible.length;
+      const remaining = sorted.length - visible.length;
+      let footerBtnHtml = '';
+
+      if (remaining > 0) {
         const nextBatch = Math.min(30, remaining);
-        footerActionHtml = `
-          <div class="pt-2 pb-1">
-            <button onclick="loadMoreEpisodes()" class="w-full py-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-xs font-semibold text-white transition flex items-center justify-center gap-2">
-              <span>Load ${nextBatch} More Episodes</span>
-              <span class="text-zinc-500 font-normal">(Showing ${visible.length} of ${total})</span>
+        footerBtnHtml = `
+          <div class="pt-2 pb-4 text-center">
+            <button onclick="loadMoreEpisodes()" class="w-full py-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-xs font-semibold text-white transition">
+              Load ${nextBatch} More Episodes <span class="text-zinc-400 font-normal">(Showing ${visible.length} of ${sorted.length})</span>
             </button>
           </div>
         `;
-      } else if (currentFeedState.feedUrl && !currentFeedState.fullRssLoaded) {
-        footerActionHtml = `
-          <div class="pt-2 pb-1">
-            <button onclick="unlockFullRssArchive(false)" class="w-full py-2.5 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white transition">
-              ${currentFeedState.loadingRss ? 'Checking Full RSS Archive...' : 'Load Complete RSS Back-Catalog'}
+      } else if (!feedState.archiveLoaded && feedState.feedUrl) {
+        footerBtnHtml = `
+          <div class="pt-2 pb-4 text-center">
+            <button onclick="fetchFullRssArchive()" class="w-full py-2.5 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 transition">
+              ${feedState.loadingArchive ? 'Loading older episodes from archive...' : `Showing all ${sorted.length} loaded episodes · Tap to fetch full RSS archive`}
             </button>
           </div>
         `;
-      } else if (total > 30) {
-        footerActionHtml = `<div class="text-center text-[11px] text-zinc-600 py-2">Showing all ${total} episodes</div>`;
+      } else {
+        footerBtnHtml = `<div class="text-[11px] text-zinc-600 text-center py-3">Showing all ${sorted.length} episodes</div>`;
       }
 
-      container.innerHTML = rowsHtml + footerActionHtml;
+      listEl.innerHTML = itemsHtml + footerBtnHtml;
     }
 
-    // --- QUEUE MANAGEMENT ---
+    // --- QUEUE MANAGEMENT (WITH CURRENTLY PLAYING WAVEFORM INDICATOR) ---
     function addToQueue(encodedEp) {
       const ep = JSON.parse(decodeURIComponent(encodedEp));
       state.playlist.push(ep);
@@ -1046,32 +976,29 @@
         return;
       }
 
-      const isAudioPlaying = !audio.paused && !audio.ended && Boolean(audio.src);
-
       container.innerHTML = state.playlist.map((ep, i) => {
         const epObj = encodeURIComponent(JSON.stringify(ep));
         const isCurrent = isSameEpisode(state.currentEpisode, ep);
+
         return `
-          <div class="flex items-center justify-between p-2.5 border rounded-xl transition ${isCurrent ? 'border-emerald-500/45 bg-emerald-950/20 shadow-sm' : 'minimal-border bg-zinc-900/40 hover:bg-zinc-900/80'}">
-            <div class="flex items-center gap-3 overflow-hidden pr-2">
+          <div class="flex items-center justify-between p-2.5 border ${isCurrent ? 'border-emerald-500/50 bg-emerald-950/20' : 'minimal-border bg-zinc-900/40 hover:bg-zinc-900/80'} rounded-xl transition">
+            <div class="flex items-center gap-3 overflow-hidden pr-2 flex-1 cursor-pointer" onclick="playFromQueue(${i}, '${epObj}')">
               <div class="w-5 flex items-center justify-center flex-shrink-0">
-                ${isCurrent ? getWaveformHtml(isAudioPlaying) : `<span class="text-xs text-zinc-500 font-mono-time text-center">${i + 1}</span>`}
+                ${isCurrent ? getWaveformHtml() : `<span class="text-xs text-zinc-500 font-mono-time">${i + 1}</span>`}
               </div>
               <img src="${getHiResArt(ep.art)}" onerror="this.src=FALLBACK_ART" class="w-10 h-10 rounded-lg object-cover flex-shrink-0 border ${isCurrent ? 'border-emerald-500/50' : 'border-zinc-800'}">
               <div class="truncate">
                 <div class="flex items-center gap-1.5">
                   <div class="text-xs font-medium ${isCurrent ? 'text-emerald-300' : 'text-white'} truncate">${escapeHtml(ep.title)}</div>
                 </div>
-                <div class="text-[11px] ${isCurrent ? 'text-emerald-400/70' : 'text-zinc-500'} truncate">
-                  ${isCurrent ? (isAudioPlaying ? 'Now Playing · ' : 'Paused · ') : ''}${escapeHtml(ep.podcast)}
-                </div>
+                <div class="text-[11px] text-zinc-500 truncate">${escapeHtml(ep.podcast)}${isCurrent ? (audio.paused ? ' · Paused' : ' · Now Playing') : ''}</div>
               </div>
             </div>
             <div class="flex items-center gap-1 flex-shrink-0">
               <button onclick="moveQueueItem(${i}, -1)" ${i === 0 ? 'disabled class="opacity-25 px-2 py-1 text-xs"' : 'class="px-2 py-1 text-xs text-zinc-400 hover:text-white bg-zinc-900 rounded"'} title="Move Up">↑</button>
               <button onclick="moveQueueItem(${i}, 1)" ${i === state.playlist.length - 1 ? 'disabled class="opacity-25 px-2 py-1 text-xs"' : 'class="px-2 py-1 text-xs text-zinc-400 hover:text-white bg-zinc-900 rounded"'} title="Move Down">↓</button>
-              <button onclick="${isCurrent ? 'togglePlay()' : `playFromQueue(${i}, '${epObj}')`}" class="${isCurrent ? 'bg-emerald-400 text-black hover:bg-emerald-300' : 'bg-white text-black hover:bg-zinc-200'} px-2.5 py-1 rounded-lg text-xs font-semibold ml-1 transition">
-                ${isCurrent ? (isAudioPlaying ? 'Pause' : 'Resume') : 'Play'}
+              <button onclick="playFromQueue(${i}, '${epObj}')" class="${isCurrent ? 'bg-emerald-400 text-black' : 'bg-white text-black'} px-2.5 py-1 rounded-lg text-xs font-semibold ml-1">
+                ${isCurrent ? (audio.paused ? 'Resume' : 'Pause') : 'Play'}
               </button>
               <button onclick="removeQueueItem(${i})" class="px-2 py-1 text-xs text-zinc-500 hover:text-red-400" title="Remove">✕</button>
             </div>
@@ -1081,6 +1008,11 @@
     }
 
     function playFromQueue(index, encodedEp) {
+      const ep = JSON.parse(decodeURIComponent(encodedEp));
+      if (isSameEpisode(state.currentEpisode, ep)) {
+        togglePlay();
+        return;
+      }
       playEpisode(encodedEp, 0);
     }
 
@@ -1091,6 +1023,7 @@
       state.currentEpisode = ep;
       saveState();
       loadCurrentIntoPlayer(startTime, true);
+      renderEpisodesSliceOnly();
     }
 
     function loadCurrentIntoPlayer(startTime = 0, autoPlay = false) {
@@ -1112,9 +1045,8 @@
         audio.load();
       }
 
-      audio.playbackRate = state.playbackSpeed || 1;
-      audio.defaultPlaybackRate = state.playbackSpeed || 1;
-
+      audio.playbackRate = state.playbackRate;
+      audio.defaultPlaybackRate = state.playbackRate;
       pendingSeekTime = startTime > 0 ? startTime : null;
 
       if ('mediaSession' in navigator) {
@@ -1135,6 +1067,7 @@
         const playPromise = audio.play();
         if (playPromise !== undefined) {
           playPromise.then(() => {
+            audio.playbackRate = state.playbackRate;
             setPlayerStatus('');
             if (pendingSeekTime !== null) {
               audio.currentTime = pendingSeekTime;
@@ -1148,7 +1081,7 @@
     }
 
     audio.addEventListener('loadedmetadata', () => {
-      audio.playbackRate = state.playbackSpeed || 1;
+      audio.playbackRate = state.playbackRate;
       if (pendingSeekTime !== null) {
         audio.currentTime = pendingSeekTime;
         pendingSeekTime = null;
@@ -1160,14 +1093,12 @@
 
     audio.addEventListener('waiting', () => setPlayerStatus('Buffering...'));
     audio.addEventListener('playing', () => {
-      audio.playbackRate = state.playbackSpeed || 1;
+      audio.playbackRate = state.playbackRate;
       setPlayerStatus('');
-      refreshPlayingIndicators();
     });
     audio.addEventListener('error', () => {
       setPlayerStatus('Stream unavailable');
       showToast('Stream blocked or unavailable. Try another episode.', 'bg-red-400');
-      refreshPlayingIndicators();
     });
 
     function togglePlay() {
@@ -1178,7 +1109,10 @@
       }
       if (audio.paused) {
         setPlayerStatus('Loading...');
-        audio.play().then(() => setPlayerStatus('')).catch(() => setPlayerStatus('Tap Play'));
+        audio.play().then(() => {
+          audio.playbackRate = state.playbackRate;
+          setPlayerStatus('');
+        }).catch(() => setPlayerStatus('Tap Play'));
       } else {
         audio.pause();
       }
@@ -1199,34 +1133,28 @@
         showToast('Queue is empty', 'bg-zinc-400');
         return;
       }
-      const currentIdx = state.playlist.findIndex(ep => isSameEpisode(ep, state.currentEpisode));
-      let nextEp = null;
-      if (currentIdx > -1) {
-        if (currentIdx + 1 < state.playlist.length) {
-          nextEp = state.playlist[currentIdx + 1];
-        } else {
-          showToast('Reached end of Queue', 'bg-zinc-400');
-          refreshPlayingIndicators();
-          return;
-        }
+      const currentIndex = state.playlist.findIndex(ep => isSameEpisode(ep, state.currentEpisode));
+      if (currentIndex > -1 && currentIndex + 1 < state.playlist.length) {
+        playEpisode(state.playlist[currentIndex + 1], 0);
+      } else if (currentIndex === -1) {
+        playEpisode(state.playlist[0], 0);
       } else {
-        nextEp = state.playlist[0];
+        showToast('Reached end of Queue', 'bg-zinc-400');
       }
-      saveState();
-      playEpisode(nextEp, 0);
     }
 
     audio.addEventListener('play', () => {
-      audio.playbackRate = state.playbackSpeed || 1;
       document.getElementById('play-btn').textContent = 'Pause';
       document.getElementById('np-play-btn').textContent = 'Pause';
-      refreshPlayingIndicators();
+      renderPlaylist();
+      renderEpisodesSliceOnly();
     });
 
     audio.addEventListener('pause', () => {
       document.getElementById('play-btn').textContent = 'Play';
       document.getElementById('np-play-btn').textContent = 'Play';
-      refreshPlayingIndicators();
+      renderPlaylist();
+      renderEpisodesSliceOnly();
     });
 
     audio.addEventListener('timeupdate', () => {
