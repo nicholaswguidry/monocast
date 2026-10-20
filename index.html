@@ -51,6 +51,41 @@
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+
+    /* Animated Waveform Equalizer Indicator */
+    @keyframes eq-bounce-1 { 0%, 100% { height: 3px; } 50% { height: 14px; } }
+    @keyframes eq-bounce-2 { 0%, 100% { height: 13px; } 35% { height: 4px; } 70% { height: 15px; } }
+    @keyframes eq-bounce-3 { 0%, 100% { height: 6px; } 45% { height: 15px; } 80% { height: 3px; } }
+    @keyframes eq-bounce-4 { 0%, 100% { height: 11px; } 25% { height: 15px; } 65% { height: 4px; } }
+
+    .eq-container {
+      display: inline-flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 2px;
+      width: 16px;
+      height: 15px;
+      flex-shrink: 0;
+    }
+    .eq-bar {
+      width: 2.5px;
+      background-color: #34d399;
+      border-radius: 999px;
+      transition: height 0.2s ease, opacity 0.2s ease;
+    }
+    .eq-playing .eq-bar:nth-child(1) { animation: eq-bounce-1 0.75s ease-in-out infinite; }
+    .eq-playing .eq-bar:nth-child(2) { animation: eq-bounce-2 0.65s ease-in-out infinite; }
+    .eq-playing .eq-bar:nth-child(3) { animation: eq-bounce-3 0.85s ease-in-out infinite; }
+    .eq-playing .eq-bar:nth-child(4) { animation: eq-bounce-4 0.7s ease-in-out infinite; }
+
+    .eq-paused .eq-bar {
+      animation: none !important;
+      opacity: 0.55;
+    }
+    .eq-paused .eq-bar:nth-child(1) { height: 4px; }
+    .eq-paused .eq-bar:nth-child(2) { height: 8px; }
+    .eq-paused .eq-bar:nth-child(3) { height: 5px; }
+    .eq-paused .eq-bar:nth-child(4) { height: 3px; }
   </style>
 </head>
 <body class="max-w-3xl mx-auto px-4 pt-3 pb-44 select-none min-h-screen flex flex-col">
@@ -184,6 +219,17 @@
         <button onclick="skip(30)" class="text-xs font-mono-time text-zinc-300 hover:text-white bg-zinc-800/80 hover:bg-zinc-800 border border-zinc-700/60 rounded-xl px-3.5 py-2.5 transition active:scale-95">+30s</button>
       </div>
 
+      <!-- Playback Speed Selector Bar (Up to 3x) -->
+      <div class="w-full space-y-2 pt-1">
+        <div class="flex items-center justify-between px-1">
+          <span class="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Playback Speed</span>
+          <span id="np-speed-label" class="text-xs font-mono-time font-semibold text-white">1x</span>
+        </div>
+        <div id="np-speed-pills" class="grid grid-cols-8 gap-1 bg-zinc-950/90 p-1 rounded-xl border border-zinc-800/80">
+          <!-- Populated dynamically by renderSpeedControls() -->
+        </div>
+      </div>
+
       <!-- Secondary Actions: Bookmark, Sleep Timer, Next in Queue -->
       <div class="w-full pt-4 border-t border-zinc-800/80 flex items-center justify-between gap-2">
         <button onclick="openBookmarkModal()" class="flex-1 bg-zinc-800/70 hover:bg-zinc-800 text-amber-300 border border-zinc-700/60 rounded-xl py-2.5 px-3 text-xs font-medium flex items-center justify-center gap-1.5 transition">
@@ -243,8 +289,10 @@
           <button onclick="playNextInQueue()" class="text-xs text-zinc-400 hover:text-white px-2 py-1.5 rounded hover:bg-zinc-900 transition" title="Play Next in Queue">⏭</button>
         </div>
 
-        <!-- Bookmark & Sleep Timer -->
+        <!-- Speed, Bookmark & Sleep Timer -->
         <div class="flex items-center gap-1.5">
+          <button onclick="cyclePlaybackSpeed()" id="footer-speed-btn" class="bg-zinc-900 border minimal-border text-zinc-300 hover:text-white hover:border-zinc-600 px-2 py-1.5 rounded-lg text-xs font-mono-time font-medium transition" title="Cycle Playback Speed">1x</button>
+
           <button onclick="openBookmarkModal()" class="bg-zinc-900 border minimal-border text-zinc-200 hover:text-white hover:border-zinc-600 px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition">
             <span class="text-amber-400">★</span>
             <span class="hidden sm:inline">Bookmark</span>
@@ -299,8 +347,11 @@
       playlist: JSON.parse(localStorage.getItem('pod_playlist') || '[]'),
       bookmarks: JSON.parse(localStorage.getItem('pod_bookmarks') || '[]'),
       currentEpisode: JSON.parse(localStorage.getItem('pod_current') || 'null'),
+      playbackSpeed: parseFloat(localStorage.getItem('pod_speed') || '1') || 1,
       activeTab: 'discover'
     };
+
+    const SPEED_OPTIONS = [0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 
     // Active Podcast Feed Pagination, Sort & Archive State
     let currentFeedState = {
@@ -341,6 +392,83 @@
       const s2 = document.getElementById('np-status');
       if (s1) s1.textContent = text || '';
       if (s2) s2.textContent = text || '';
+    }
+
+    function normalizeAudioUrl(url) {
+      return String(url || '').trim().replace(/^http:\/\//i, 'https://');
+    }
+
+    function isSameEpisode(epA, epB) {
+      if (!epA || !epB) return false;
+      const urlA = normalizeAudioUrl(epA.audioUrl);
+      const urlB = normalizeAudioUrl(epB.audioUrl);
+      if (urlA && urlB) return urlA === urlB;
+      return epA.title === epB.title && epA.podcast === epB.podcast;
+    }
+
+    function getWaveformHtml(isPlaying) {
+      const stateClass = isPlaying ? 'eq-playing' : 'eq-paused';
+      return `
+        <span class="eq-container ${stateClass}" title="${isPlaying ? 'Now Playing' : 'Paused'}">
+          <span class="eq-bar"></span>
+          <span class="eq-bar"></span>
+          <span class="eq-bar"></span>
+          <span class="eq-bar"></span>
+        </span>
+      `;
+    }
+
+    function refreshPlayingIndicators() {
+      renderPlaylist();
+      if (document.getElementById('episodes-list-container')) {
+        renderEpisodesListOnly();
+      }
+    }
+
+    // --- PLAYBACK SPEED CONTROLS (UP TO 3X) ---
+    function setPlaybackSpeed(rate, notify = true) {
+      const parsed = parseFloat(rate);
+      if (isNaN(parsed) || parsed <= 0) return;
+      state.playbackSpeed = parsed;
+      localStorage.setItem('pod_speed', String(parsed));
+      audio.playbackRate = parsed;
+      audio.defaultPlaybackRate = parsed;
+      renderSpeedControls();
+      if (notify) {
+        showToast(`Playback speed: ${parsed}x`, 'bg-white');
+      }
+    }
+
+    function cyclePlaybackSpeed() {
+      const idx = SPEED_OPTIONS.findIndex(s => Math.abs(s - state.playbackSpeed) < 0.01);
+      const nextIdx = (idx + 1) % SPEED_OPTIONS.length;
+      setPlaybackSpeed(SPEED_OPTIONS[nextIdx], true);
+    }
+
+    function renderSpeedControls() {
+      const label = `${state.playbackSpeed}x`;
+      const npLabel = document.getElementById('np-speed-label');
+      const footerBtn = document.getElementById('footer-speed-btn');
+      const pillsContainer = document.getElementById('np-speed-pills');
+
+      if (npLabel) npLabel.textContent = label;
+      if (footerBtn) footerBtn.textContent = label;
+
+      if (pillsContainer) {
+        pillsContainer.innerHTML = SPEED_OPTIONS.map(s => {
+          const active = Math.abs(s - state.playbackSpeed) < 0.01;
+          return `
+            <button onclick="setPlaybackSpeed(${s})" 
+              class="py-1.5 rounded-lg text-[11px] font-mono-time font-medium transition ${
+                active
+                  ? 'bg-white text-black font-semibold shadow'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+              }">
+              ${s}x
+            </button>
+          `;
+        }).join('');
+      }
     }
 
     function saveState() {
@@ -823,23 +951,31 @@
       }
 
       const { podTitle, art } = currentFeedState;
+      const isAudioPlaying = !audio.paused && !audio.ended && Boolean(audio.src);
 
       const rowsHtml = visible.map(ep => {
-        const epPayload = encodeURIComponent(JSON.stringify({
+        const epObj = {
           title: ep.title,
           podcast: podTitle,
           audioUrl: ep.audioUrl,
           art: ep.art || art
-        }));
+        };
+        const epPayload = encodeURIComponent(JSON.stringify(epObj));
+        const isCurrent = isSameEpisode(state.currentEpisode, epObj);
         const metaLine = [ep.pubDate, ep.duration].filter(Boolean).join(' · ') || podTitle;
         return `
-          <div class="flex items-center justify-between p-3 border minimal-border rounded-xl bg-zinc-900/25 hover:bg-zinc-900/60 transition">
+          <div class="flex items-center justify-between p-3 border rounded-xl transition ${isCurrent ? 'border-emerald-500/40 bg-emerald-950/15' : 'minimal-border bg-zinc-900/25 hover:bg-zinc-900/60'}">
             <div class="min-w-0 pr-3 flex-1 cursor-pointer" onclick="playEpisode('${epPayload}')">
-              <div class="text-xs font-medium text-zinc-100 truncate">${escapeHtml(ep.title)}</div>
+              <div class="flex items-center gap-2">
+                ${isCurrent ? getWaveformHtml(isAudioPlaying) : ''}
+                <div class="text-xs font-medium ${isCurrent ? 'text-emerald-300' : 'text-zinc-100'} truncate">${escapeHtml(ep.title)}</div>
+              </div>
               <div class="text-[11px] text-zinc-500 mt-0.5">${escapeHtml(metaLine)}</div>
             </div>
             <div class="flex items-center gap-1.5 flex-shrink-0">
-              <button onclick="playEpisode('${epPayload}')" class="bg-white text-black hover:bg-zinc-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition">Play</button>
+              <button onclick="${isCurrent ? 'togglePlay()' : `playEpisode('${epPayload}')`}" class="${isCurrent ? 'bg-emerald-400 text-black hover:bg-emerald-300' : 'bg-white text-black hover:bg-zinc-200'} px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+                ${isCurrent ? (isAudioPlaying ? 'Pause' : 'Resume') : 'Play'}
+              </button>
               <button onclick="addToQueue('${epPayload}')" class="bg-zinc-900 border minimal-border text-zinc-300 hover:text-white hover:border-zinc-600 px-2.5 py-1.5 rounded-lg text-xs transition">+ Queue</button>
             </div>
           </div>
@@ -910,22 +1046,33 @@
         return;
       }
 
+      const isAudioPlaying = !audio.paused && !audio.ended && Boolean(audio.src);
+
       container.innerHTML = state.playlist.map((ep, i) => {
         const epObj = encodeURIComponent(JSON.stringify(ep));
+        const isCurrent = isSameEpisode(state.currentEpisode, ep);
         return `
-          <div class="flex items-center justify-between p-2.5 border minimal-border rounded-xl bg-zinc-900/40 hover:bg-zinc-900/80 transition">
+          <div class="flex items-center justify-between p-2.5 border rounded-xl transition ${isCurrent ? 'border-emerald-500/45 bg-emerald-950/20 shadow-sm' : 'minimal-border bg-zinc-900/40 hover:bg-zinc-900/80'}">
             <div class="flex items-center gap-3 overflow-hidden pr-2">
-              <span class="text-xs text-zinc-500 font-mono-time w-5 text-center">${i + 1}</span>
-              <img src="${getHiResArt(ep.art)}" onerror="this.src=FALLBACK_ART" class="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-zinc-800">
+              <div class="w-5 flex items-center justify-center flex-shrink-0">
+                ${isCurrent ? getWaveformHtml(isAudioPlaying) : `<span class="text-xs text-zinc-500 font-mono-time text-center">${i + 1}</span>`}
+              </div>
+              <img src="${getHiResArt(ep.art)}" onerror="this.src=FALLBACK_ART" class="w-10 h-10 rounded-lg object-cover flex-shrink-0 border ${isCurrent ? 'border-emerald-500/50' : 'border-zinc-800'}">
               <div class="truncate">
-                <div class="text-xs font-medium text-white truncate">${escapeHtml(ep.title)}</div>
-                <div class="text-[11px] text-zinc-500 truncate">${escapeHtml(ep.podcast)}</div>
+                <div class="flex items-center gap-1.5">
+                  <div class="text-xs font-medium ${isCurrent ? 'text-emerald-300' : 'text-white'} truncate">${escapeHtml(ep.title)}</div>
+                </div>
+                <div class="text-[11px] ${isCurrent ? 'text-emerald-400/70' : 'text-zinc-500'} truncate">
+                  ${isCurrent ? (isAudioPlaying ? 'Now Playing · ' : 'Paused · ') : ''}${escapeHtml(ep.podcast)}
+                </div>
               </div>
             </div>
             <div class="flex items-center gap-1 flex-shrink-0">
               <button onclick="moveQueueItem(${i}, -1)" ${i === 0 ? 'disabled class="opacity-25 px-2 py-1 text-xs"' : 'class="px-2 py-1 text-xs text-zinc-400 hover:text-white bg-zinc-900 rounded"'} title="Move Up">↑</button>
               <button onclick="moveQueueItem(${i}, 1)" ${i === state.playlist.length - 1 ? 'disabled class="opacity-25 px-2 py-1 text-xs"' : 'class="px-2 py-1 text-xs text-zinc-400 hover:text-white bg-zinc-900 rounded"'} title="Move Down">↓</button>
-              <button onclick="playFromQueue(${i}, '${epObj}')" class="bg-white text-black px-2.5 py-1 rounded-lg text-xs font-semibold ml-1">Play</button>
+              <button onclick="${isCurrent ? 'togglePlay()' : `playFromQueue(${i}, '${epObj}')`}" class="${isCurrent ? 'bg-emerald-400 text-black hover:bg-emerald-300' : 'bg-white text-black hover:bg-zinc-200'} px-2.5 py-1 rounded-lg text-xs font-semibold ml-1 transition">
+                ${isCurrent ? (isAudioPlaying ? 'Pause' : 'Resume') : 'Play'}
+              </button>
               <button onclick="removeQueueItem(${i})" class="px-2 py-1 text-xs text-zinc-500 hover:text-red-400" title="Remove">✕</button>
             </div>
           </div>
@@ -934,8 +1081,6 @@
     }
 
     function playFromQueue(index, encodedEp) {
-      state.playlist.splice(index, 1);
-      saveState();
       playEpisode(encodedEp, 0);
     }
 
@@ -966,6 +1111,9 @@
         audio.src = cleanUrl;
         audio.load();
       }
+
+      audio.playbackRate = state.playbackSpeed || 1;
+      audio.defaultPlaybackRate = state.playbackSpeed || 1;
 
       pendingSeekTime = startTime > 0 ? startTime : null;
 
@@ -1000,6 +1148,7 @@
     }
 
     audio.addEventListener('loadedmetadata', () => {
+      audio.playbackRate = state.playbackSpeed || 1;
       if (pendingSeekTime !== null) {
         audio.currentTime = pendingSeekTime;
         pendingSeekTime = null;
@@ -1010,10 +1159,15 @@
     });
 
     audio.addEventListener('waiting', () => setPlayerStatus('Buffering...'));
-    audio.addEventListener('playing', () => setPlayerStatus(''));
+    audio.addEventListener('playing', () => {
+      audio.playbackRate = state.playbackSpeed || 1;
+      setPlayerStatus('');
+      refreshPlayingIndicators();
+    });
     audio.addEventListener('error', () => {
       setPlayerStatus('Stream unavailable');
       showToast('Stream blocked or unavailable. Try another episode.', 'bg-red-400');
+      refreshPlayingIndicators();
     });
 
     function togglePlay() {
@@ -1045,19 +1199,34 @@
         showToast('Queue is empty', 'bg-zinc-400');
         return;
       }
-      const nextEp = state.playlist.shift();
+      const currentIdx = state.playlist.findIndex(ep => isSameEpisode(ep, state.currentEpisode));
+      let nextEp = null;
+      if (currentIdx > -1) {
+        if (currentIdx + 1 < state.playlist.length) {
+          nextEp = state.playlist[currentIdx + 1];
+        } else {
+          showToast('Reached end of Queue', 'bg-zinc-400');
+          refreshPlayingIndicators();
+          return;
+        }
+      } else {
+        nextEp = state.playlist[0];
+      }
       saveState();
       playEpisode(nextEp, 0);
     }
 
     audio.addEventListener('play', () => {
+      audio.playbackRate = state.playbackSpeed || 1;
       document.getElementById('play-btn').textContent = 'Pause';
       document.getElementById('np-play-btn').textContent = 'Pause';
+      refreshPlayingIndicators();
     });
 
     audio.addEventListener('pause', () => {
       document.getElementById('play-btn').textContent = 'Play';
       document.getElementById('np-play-btn').textContent = 'Play';
+      refreshPlayingIndicators();
     });
 
     audio.addEventListener('timeupdate', () => {
@@ -1226,6 +1395,7 @@
     renderSubscriptions();
     renderPlaylist();
     renderBookmarks();
+    renderSpeedControls();
 
     if (state.currentEpisode) {
       loadCurrentIntoPlayer(0, false);
